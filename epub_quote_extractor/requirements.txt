@@ -1,0 +1,7 @@
+# Add your project dependencies here
+# e.g., beautifulsoup4
+# ebooklib
+# openai
+# python-dotenv
+# sqlalchemy
+# pydantic
