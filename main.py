@@ -174,11 +174,4 @@ def main():
     print("--- Done ---")
 
 if __name__ == '__main__':
-    # This structure ensures that if pydantic is missing, main() is not called.
-    # The check for pydantic's ValidationError should ideally be at the top level or handled by requirements.
-    if 'ValidationError' in globals() and ValidationError.__module__ != 'pydantic.errors':
-        # This means the fallback class is in use, so pydantic didn't import.
-        # The initial check already prints an error and sets up main_no_pydantic.
-        pass
-    else:
-        main()
+    main()
