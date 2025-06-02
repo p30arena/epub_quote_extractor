@@ -10,24 +10,22 @@ import json
 # Using model_json_schema() and then formatting it for readability in the prompt.
 
 # Generate a more detailed and accurate schema description from the Pydantic model
-# This is generally more robust than manually writing it.
 try:
-    # Create a dictionary that's more readable for the prompt than the full JSON schema
     schema_fields = QuoteLLM.model_fields
     simplified_schema_dict = {}
     for field_name, field_info in schema_fields.items():
         field_entry = {"description": field_info.description or "No description."}
         if field_info.annotation:
-            field_entry["type"] = str(field_info.annotation).replace("typing.Optional[", "").replace("]", "") # Simplified type
+            field_entry["type"] = str(field_info.annotation).replace("typing.Optional[", "").replace("]", "")
         if field_info.default is not None:
              field_entry["default"] = str(field_info.default)
         simplified_schema_dict[field_name] = field_entry
-
+    # Ensure OUTPUT_SCHEMA_DESCRIPTION uses indent=2 as per original analysis
     OUTPUT_SCHEMA_DESCRIPTION = json.dumps(simplified_schema_dict, indent=2)
 except Exception as e:
     print(f"Warning: Could not dynamically generate schema description from QuoteLLM: {e}")
     print("Falling back to a manually defined schema description.")
-    # Fallback manual schema description if Pydantic introspection fails for some reason
+    # Fallback manual schema description, ensure 2-space indent
     OUTPUT_SCHEMA_DESCRIPTION = '''{
       "quote_text": {
         "description": "The exact text of the saying or quote.",
@@ -55,9 +53,11 @@ except Exception as e:
       }
     }'''
 
-
 # Main system prompt or instruction for the LLM
+# Define ESCAPED_OUTPUT_SCHEMA_DESCRIPTION immediately after OUTPUT_SCHEMA_DESCRIPTION is finalized
 ESCAPED_OUTPUT_SCHEMA_DESCRIPTION = OUTPUT_SCHEMA_DESCRIPTION.replace("{", "{{").replace("}", "}}")
+
+# Define QUOTE_EXTRACTION_PROMPT_TEMPLATE using the escaped version
 QUOTE_EXTRACTION_PROMPT_TEMPLATE = f"""You are an expert assistant specialized in analyzing texts and extracting significant quotes, sayings, or "hadith" (which in a general sense means a saying or account).
 Your task is to carefully read the provided text chunk from an ebook and identify any such notable statements or sayings.
 
@@ -94,13 +94,13 @@ Text chunk to analyze:
 Example of a valid response with one quote:
 ```json
 [
-  {{
+  {{  # Start of example JSON object
     "quote_text": "The best way to predict the future is to create it.",
     "speaker": "Peter Drucker",
     "context": "Discussing proactive approaches to business strategy and innovation.",
     "topic": "Future and Creation",
     "additional_info": "Often attributed to Peter Drucker, emphasizing agency."
-  }}
+  }}  # End of example JSON object
 ]
 ```
 
