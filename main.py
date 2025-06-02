@@ -1,5 +1,6 @@
 # epub_quote_extractor/main.py
 import argparse
+import traceback
 import json # For potential pretty printing if needed
 from pathlib import Path
 from typing import List, Dict, Any
@@ -93,8 +94,10 @@ def main():
             chunk_source_preview = chunk_info['source'][:100].replace('\n', ' ')
             print(f"  Processing chunk {i + 1}/{len(text_chunks)} (Source: '{chunk_source_preview}...', Length: {len(chunk_info['text'])} chars)")
 
+            print(f"DEBUG_MAIN: Calling analyze_text_with_gemini for chunk: {chunk_info['source'][:50]}")
             # Call LLM for the current chunk
             llm_output_list = analyze_text_with_gemini(chunk_info['text'])
+            print(f"DEBUG_MAIN: Returned from analyze_text_with_gemini. Type: {type(llm_output_list)}, Content: {str(llm_output_list)[:500]}")
 
             if llm_output_list is not None: # analyze_text_with_gemini returns None on total failure, [] if no quotes
                 if not llm_output_list: # Empty list means LLM found no quotes
@@ -152,6 +155,9 @@ def main():
     except Exception as e_main_loop:
         print(f"Caught an exception in main processing loop. Type: {type(e_main_loop)}")
         print(f"Exception repr: {e_main_loop!r}")
+        print("--- Full Traceback ---")
+        traceback.print_exc()
+        print("--- End Traceback ---")
         print(f"An unexpected error occurred during the main processing loop: {e_main_loop}")
     finally:
         print("\nStep 4: Finalizing operations.")

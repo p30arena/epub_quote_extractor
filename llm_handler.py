@@ -141,6 +141,29 @@ def analyze_text_with_gemini(
             # Attempt to parse the JSON
             parsed_json = json.loads(response_text_for_error)
 
+            # Sanitize keys in each dictionary
+            sanitized_list = []
+            if isinstance(parsed_json, list):
+                for item_dict in parsed_json:
+                    if isinstance(item_dict, dict):
+                        sanitized_dict = {}
+                        for key, value in item_dict.items():
+                            print(f"DEBUG: Original key: {key!r}")
+                            sanitized_key = key.strip()
+                            if sanitized_key.startswith('"') and sanitized_key.endswith('"'):
+                                sanitized_key = sanitized_key[1:-1]
+                            print(f"DEBUG: Sanitized key: {sanitized_key!r}")
+                            sanitized_dict[sanitized_key] = value
+                        print(f"DEBUG: Sanitized dictionary to be appended: {sanitized_dict}")
+                        sanitized_list.append(sanitized_dict)
+                    else:
+                        # If an item in the list is not a dict, keep it as is.
+                        # This might indicate an unexpected response structure.
+                        print(f"Warning: Item in parsed JSON list is not a dictionary: {item_dict}")
+                        sanitized_list.append(item_dict)
+                parsed_json = sanitized_list
+            # End of key sanitization
+
             # Further validation: ensure it's a list and items are dicts (if not empty)
             if not isinstance(parsed_json, list):
                 error_message = f"LLM response was valid JSON, but not a list as expected. Type: {type(parsed_json)}"
@@ -160,6 +183,7 @@ def analyze_text_with_gemini(
             # return validated_quotes
 
             print(f"Successfully received and parsed JSON list from LLM. Found {len(parsed_json)} potential quotes.")
+            print(f"DEBUG: Final list being returned: {parsed_json}")
             return parsed_json # Return the raw list of dicts
 
         except json.JSONDecodeError as e:
