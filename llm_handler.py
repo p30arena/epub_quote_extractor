@@ -68,7 +68,7 @@ def analyze_text_with_gemini(
     prompt = get_formatted_quote_extraction_prompt(text_chunk)
 
     generation_config = genai.types.GenerationConfig(
-        # response_mime_type="application/json", # Gemini API supports this now
+        response_mime_type="application/json", # Gemini API supports this now
         temperature=0.1 # Low temperature for more deterministic, less creative output
     )
 
@@ -105,7 +105,15 @@ def analyze_text_with_gemini(
                     print("Warning: LLM response contained no parts for an unknown reason. Assuming no quotes.")
                     return []
 
-            response_text_for_error = response.text.strip() # For error reporting if JSON parsing fails
+            try:
+                response_text_for_error = response.text.strip() # For error reporting if JSON parsing fails
+            except Exception as text_access_e:
+                print(f"Error accessing or stripping response.text (Attempt {current_retry + 1}/{retries}): {text_access_e!r}")
+                last_error = text_access_e
+                current_retry += 1
+                if current_retry < retries:
+                    time.sleep(delay)
+                continue # Go to the next retry attempt
 
             if not response_text_for_error:
                  print("Warning: Received empty text string from LLM. Assuming no quotes found.")
@@ -165,7 +173,10 @@ def analyze_text_with_gemini(
             return []
         except Exception as e: # Broad exception for other API errors (network, timeouts, etc.)
             error_type = type(e).__name__
-            print(f"Error during LLM call (Attempt {current_retry + 1}/{retries}) of type {error_type}: {e}")
+            try:
+                print(f"Error during LLM call (Attempt {current_retry + 1}/{retries}) of type {error_type}. Error: {e!r}") # Using !r for repr(e)
+            except Exception as log_e:
+                print(f"Critical: Failed to log original error. Original error type: {error_type}. Logging error: {log_e!r}")
             last_error = e
 
         current_retry += 1
