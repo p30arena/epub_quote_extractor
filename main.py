@@ -150,6 +150,8 @@ def main():
                 print(f"    Error saving final batch to database: {e_db_final_save}.")
 
     except Exception as e_main_loop:
+        print(f"Caught an exception in main processing loop. Type: {type(e_main_loop)}")
+        print(f"Exception repr: {e_main_loop!r}")
         print(f"An unexpected error occurred during the main processing loop: {e_main_loop}")
     finally:
         print("\nStep 4: Finalizing operations.")
