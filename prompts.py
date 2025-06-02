@@ -90,7 +90,7 @@ Key instructions for extraction:
 2.  **`speaker`**: Identify who made the statement. This field MUST be in Farsi. If explicitly mentioned (e.g., "John said...", "...replied Mary"), use that name. If implied by context, use the name. If it's general narration or the speaker is truly unknown, use "Unknown" or "Narrator" as appropriate (in Farsi, e.g., "ناشناس" یا "راوی"). If the text indicates a source (e.g. "a wise man once said"), use that (in Farsi).
 3.  **`context`**: Briefly describe the situation in which the quote was made. What was happening, being discussed, or what led to the statement? This field MUST be in Farsi.
 4.  **`topic`**: Provide a concise keyword or short phrase for the main theme or subject of the quote (e.g., "صبر", "دانش", "صدقه"). This field MUST be in Farsi.
-5.  **`additional_info`**: This field MUST be a JSON string. It must include a 'surah' key with the Surah name in Farsi (e.g., "سوره فاتحه"). If the `quote_text` is in Arabic, the JSON string MUST also include a 'quote_translation' key with the Farsi translation of the `quote_text`. For example, if `quote_text` is "بسم الله الرحمن الرحيم", `additional_info` would be "{{\"surah\": \"سورة الفاتحة\", \"quote_translation\": \"به نام خداوند بخشنده مهربان\"}}". If `quote_text` is already in Farsi, `additional_info` would be "{{\"surah\": \"سوره بقره\"}}". All text values within the JSON string (like Surah name and translation) MUST be in Farsi.
+5.  **`additional_info`**: This field MUST be a JSON string. It must include a 'surah' key with the Surah name in Farsi (e.g., "سوره فاتحه"). If the `quote_text` is in Arabic, the JSON string MUST also include a 'quote_translation' key with the Farsi translation of the `quote_text`. For example, if `quote_text` is "بسم الله الرحمن الرحيم", `additional_info` would be "{{{{\"surah\": \"سورة الفاتحة\", \"quote_translation\": \"به نام خداوند بخشنده مهربان\"}}}}". If `quote_text` is already in Farsi, `additional_info` would be "{{{{\"surah\": \"سوره بقره\"}}}}". All text values within the JSON string (like Surah name and translation) MUST be in Farsi.
 
 Output Requirements:
 - Your entire response MUST be a single JSON list.
@@ -133,6 +133,7 @@ def get_formatted_quote_extraction_prompt(text_chunk: str) -> str:
     Returns:
         The fully formatted prompt string ready for the LLM.
     """
+    print(QUOTE_EXTRACTION_PROMPT_TEMPLATE)
     return QUOTE_EXTRACTION_PROMPT_TEMPLATE.format(text_chunk=text_chunk)
 
 if __name__ == '__main__':
