@@ -133,7 +133,6 @@ def get_formatted_quote_extraction_prompt(text_chunk: str) -> str:
     Returns:
         The fully formatted prompt string ready for the LLM.
     """
-    print(QUOTE_EXTRACTION_PROMPT_TEMPLATE)
     return QUOTE_EXTRACTION_PROMPT_TEMPLATE.format(text_chunk=text_chunk)
 
 if __name__ == '__main__':
