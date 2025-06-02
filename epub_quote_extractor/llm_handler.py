@@ -27,7 +27,7 @@ else:
         print(f"Error configuring Google Generative AI SDK: {e}")
         # GEMINI_API_KEY = None # Effectively disables calls if config fails
 
-DEFAULT_MODEL_NAME = "gemini-1.5-flash-latest"
+DEFAULT_MODEL_NAME = "gemini-2.0-flash"
 # For safety, especially with automated calls, very restrictive settings.
 # Consider making these configurable if more diverse content is expected.
 SAFETY_SETTINGS = [
@@ -57,6 +57,11 @@ def analyze_text_with_gemini(
         and should conform to QuoteLLM schema. Returns None if all retries fail
         or if the API key is not configured. Returns an empty list if no quotes are found.
     """
+    ALLOWED_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20"]
+    if model_name not in ALLOWED_MODELS:
+        print(f"Error: Invalid model_name '{model_name}'. Only the following models are allowed: {ALLOWED_MODELS}")
+        return None
+
     if not SDK_CONFIGURED_SUCCESSFULLY: # Check if SDK was configured
         print("Error: Gemini API key not configured or SDK initialization failed. Cannot analyze text.")
         return None
