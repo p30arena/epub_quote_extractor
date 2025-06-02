@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from typing import List, Generator, Any
 
 # Relative import for schemas
-from .schemas import Base, QuoteDB
+from schemas import Base, QuoteDB
 
 # Load environment variables from .env file
 load_dotenv()
@@ -149,4 +149,4 @@ if __name__ == '__main__':
         else:
             print("For SQLite, ensure the directory is writable and 'quotes_fallback.db' can be created/accessed.")
 
-```
+

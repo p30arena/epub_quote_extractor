@@ -2,7 +2,7 @@
 
 # Import the Pydantic schema to help the LLM understand the desired output structure.
 # This is for reference in the prompt string and for potential programmatic generation.
-from .schemas import QuoteLLM
+from schemas import QuoteLLM
 import json
 
 # Constructing the Pydantic schema as a string to include in the prompt
@@ -146,4 +146,4 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"An error occurred while accessing QuoteLLM schema: {e}")
 
-```
+

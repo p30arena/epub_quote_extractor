@@ -6,9 +6,8 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from typing import List, Dict, Any, Optional
 
-# Relative imports
-from .prompts import get_formatted_quote_extraction_prompt
-from .schemas import QuoteLLM # For validation if desired, though prompt is main guide
+from prompts import get_formatted_quote_extraction_prompt
+from schemas import QuoteLLM # For validation if desired, though prompt is main guide
 
 # Load environment variables from .env file
 load_dotenv()
