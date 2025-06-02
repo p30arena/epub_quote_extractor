@@ -47,7 +47,7 @@ except Exception as e:
         "default": "None"
       },
       "additional_info": {
-        "description": "A JSON string containing other relevant information. This string MUST include a 'surah' key with the Surah name in Farsi. If the 'quote_text' is in Arabic, this JSON string MUST also include a 'quote_translation' key with the Farsi translation of the quote. Example for an Arabic quote: \\"{\\\\\\"surah\\\\\\": \\\\\\"سورة الفاتحة\\\\\\", \\\\\\"quote_translation\\\\\\": \\\\\\"به نام خداوند بخشنده مهربان\\\\\\"}\\". Example for a Farsi quote: \\"{\\\\\\"surah\\\\\\": \\\\\\"سوره بقره\\\\\\"}\\". This entire field MUST be in Farsi, except for the JSON structure itself.",
+        "description": "A JSON string containing other relevant information. This string MUST include a 'surah' key with the Surah name in Farsi. If the 'quote_text' is in Arabic, this JSON string MUST also include a 'quote_translation' key with the Farsi translation of the quote. Example for an Arabic quote: \"{\"surah\": \"سورة الفاتحة\", \"quote_translation\": \"به نام خداوند بخشنده مهربان\"}\". Example for a Farsi quote: \"{\"surah\": \"سوره بقره\"}\". This entire field MUST be in Farsi, except for the JSON structure itself.",
         "type": "str",
         "default": "None"
       }
@@ -63,14 +63,14 @@ EXAMPLE_JSON_CONTENT = """[
     "speaker": "النبي محمد (ص)",
     "context": "سياق المثال",
     "topic": "الموضوع",
-    "additional_info": "{\\"surah\\": \\"سورة الفاتحة\\", \\"quote_translation\\": \\"به نام خداوند بخشنده مهربان\\"}"
+    "additional_info": "{\"surah\": \"سورة الفاتحة\", \"quote_translation\": \"به نام خداوند بخشنده مهربان\"}"
   },
   {
     "quote_text": "این یک نقل قول فارسی است",
     "speaker": "سخنران فرضی",
     "context": "زمینه نمونه",
     "topic": "موضوع نمونه",
-    "additional_info": "{\\"surah\\": \\"سوره بقره\\"}"
+    "additional_info": "{\"surah\": \"سوره بقره\"}"
   }
 ]"""
 ESCAPED_EXAMPLE_JSON_CONTENT = EXAMPLE_JSON_CONTENT.replace("{", "{{").replace("}", "}}")

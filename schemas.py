@@ -11,7 +11,7 @@ class QuoteLLM(BaseModel):
     speaker: Optional[str] = Field(None, description="The person or character who uttered the saying. If unknown, can be null.")
     context: Optional[str] = Field(None, description="The immediate context surrounding the quote, helping to understand its meaning.")
     topic: Optional[str] = Field(None, description="The main topic or theme of the quote.")
-    additional_info: Optional[str] = Field(None, description="A JSON string containing other relevant information. Expected keys include 'surah' (the name of the Surah in Farsi) and, if the quote_text is in Arabic, 'quote_translation' (the Farsi translation of the quote). Example: '{\\"surah\\": \\"سورة الفاتحة\\", \\"quote_translation\\": \\"به نام خداوند بخشنده مهربان\\"}'")
+    additional_info: Optional[str] = Field(None, description="A JSON string containing other relevant information. Expected keys include 'surah' (the name of the Surah in Farsi) and, if the quote_text is in Arabic, 'quote_translation' (the Farsi translation of the quote). Example: '{\"surah\": \"سورة الفاتحة\", \"quote_translation\": \"به نام خداوند بخشنده مهربان\"}'")
 
     model_config = {
         "json_schema_extra": {
