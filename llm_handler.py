@@ -238,4 +238,4 @@ if __name__ == '__main__':
         print("\nLLM Handler Test Complete. Review results above.")
         print("Note: Actual LLM calls depend on a valid GEMINI_API_KEY and network access.")
 
-```
+
