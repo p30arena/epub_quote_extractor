@@ -57,6 +57,17 @@ except Exception as e:
 # Define ESCAPED_OUTPUT_SCHEMA_DESCRIPTION immediately after OUTPUT_SCHEMA_DESCRIPTION is finalized
 ESCAPED_OUTPUT_SCHEMA_DESCRIPTION = OUTPUT_SCHEMA_DESCRIPTION.replace("{", "{{").replace("}", "}}")
 
+EXAMPLE_JSON_CONTENT = """[
+  {  # Start of example JSON object
+    "quote_text": "The best way to predict the future is to create it.",
+    "speaker": "Peter Drucker",
+    "context": "Discussing proactive approaches to business strategy and innovation.",
+    "topic": "Future and Creation",
+    "additional_info": "Often attributed to Peter Drucker, emphasizing agency."
+  }
+]"""
+ESCAPED_EXAMPLE_JSON_CONTENT = EXAMPLE_JSON_CONTENT.replace("{", "{{").replace("}", "}}")
+
 # Define QUOTE_EXTRACTION_PROMPT_TEMPLATE using the escaped version
 QUOTE_EXTRACTION_PROMPT_TEMPLATE = f"""You are an expert assistant specialized in analyzing texts and extracting significant quotes, sayings, or "hadith" (which in a general sense means a saying or account).
 Your task is to carefully read the provided text chunk from an ebook and identify any such notable statements or sayings.
@@ -93,15 +104,7 @@ Text chunk to analyze:
 
 Example of a valid response with one quote:
 ```json
-[
-  {{  # Start of example JSON object
-    "quote_text": "The best way to predict the future is to create it.",
-    "speaker": "Peter Drucker",
-    "context": "Discussing proactive approaches to business strategy and innovation.",
-    "topic": "Future and Creation",
-    "additional_info": "Often attributed to Peter Drucker, emphasizing agency."
-  }}  # End of example JSON object
-]
+{ESCAPED_EXAMPLE_JSON_CONTENT}
 ```
 
 Example of a valid response with no quotes:
