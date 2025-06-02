@@ -4,12 +4,10 @@ import json # For potential pretty printing if needed
 from pathlib import Path
 from typing import List, Dict, Any
 
-# Assuming epub-quote-extractor is the root and these are importable
-# These imports need to be relative to the current file's location if main.py is inside epub_quote_extractor
-from .epub_parser import extract_text_from_epub, chunk_text
-from .llm_handler import analyze_text_with_gemini, DEFAULT_MODEL_NAME as LLM_DEFAULT_MODEL # import model name
-from .database import create_db_and_tables, get_db, save_quotes_to_db
-from .schemas import QuoteLLM # For validation
+from epub_parser import extract_text_from_epub, chunk_text
+from llm_handler import analyze_text_with_gemini, DEFAULT_MODEL_NAME as LLM_DEFAULT_MODEL # import model name
+from database import create_db_and_tables, get_db, save_quotes_to_db
+from schemas import QuoteLLM # For validation
 
 # Pydantic is needed for QuoteLLM validation
 try:
