@@ -57,13 +57,14 @@ except Exception as e:
 
 
 # Main system prompt or instruction for the LLM
+ESCAPED_OUTPUT_SCHEMA_DESCRIPTION = OUTPUT_SCHEMA_DESCRIPTION.replace("{", "{{").replace("}", "}}")
 QUOTE_EXTRACTION_PROMPT_TEMPLATE = f"""You are an expert assistant specialized in analyzing texts and extracting significant quotes, sayings, or "hadith" (which in a general sense means a saying or account).
 Your task is to carefully read the provided text chunk from an ebook and identify any such notable statements or sayings.
 
 For each quote you identify, you MUST provide the information in a structured JSON format, as a list of JSON objects.
 Each object in the list MUST conform to the following JSON schema, detailing the expected fields:
 ```json
-{OUTPUT_SCHEMA_DESCRIPTION}
+{ESCAPED_OUTPUT_SCHEMA_DESCRIPTION}
 ```
 
 Key instructions for extraction:
