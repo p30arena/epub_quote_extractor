@@ -111,6 +111,12 @@ def main():
                             print(f"    Warning: LLM returned a non-dictionary item in its list: {quote_data_from_llm}. Skipping this item.")
                             continue
                         try:
+                            # Handle additional_info: if it's a dict, convert to JSON string
+                            # This ensures compatibility with QuoteLLM which expects a string that is JSON.
+                            ai = quote_data_from_llm.get("additional_info")
+                            if isinstance(ai, dict):
+                                quote_data_from_llm["additional_info"] = json.dumps(ai, ensure_ascii=False)
+
                             # Validate data against Pydantic model (QuoteLLM)
                             validated_quote = QuoteLLM(**quote_data_from_llm)
 

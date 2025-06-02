@@ -28,26 +28,26 @@ except Exception as e:
     # Fallback manual schema description, ensure 2-space indent
     OUTPUT_SCHEMA_DESCRIPTION = '''{
       "quote_text": {
-        "description": "The exact text of the saying or quote.",
+        "description": "The exact text of the saying or quote. This text MUST NOT be translated from its original language.",
         "type": "str"
       },
       "speaker": {
-        "description": "The person or character who uttered the saying. If unknown, can be null or 'Unknown'.",
+        "description": "The person or character who uttered the saying. If unknown, can be null or 'Unknown'. This field MUST be in Farsi.",
         "type": "str",
         "default": "None"
       },
       "context": {
-        "description": "The immediate context surrounding the quote, helping to understand its meaning. This should be a brief summary of the situation or surrounding text.",
+        "description": "The immediate context surrounding the quote, helping to understand its meaning. This should be a brief summary of the situation or surrounding text. This field MUST be in Farsi.",
         "type": "str",
         "default": "None"
       },
       "topic": {
-        "description": "The main topic or theme of the quote (e.g., 'Patience', 'Knowledge', 'Charity'). If multiple, pick the most prominent or list them.",
+        "description": "The main topic or theme of the quote (e.g., 'Patience', 'Knowledge', 'Charity'). If multiple, pick the most prominent or list them. This field MUST be in Farsi.",
         "type": "str",
         "default": "None"
       },
       "additional_info": {
-        "description": "Any other relevant information, such as specific circumstances, historical relevance, or if it's a direct response to a question. If none, can be null.",
+        "description": "A JSON string containing other relevant information. This string MUST include a 'surah' key with the Surah name in Farsi. If the 'quote_text' is in Arabic, this JSON string MUST also include a 'quote_translation' key with the Farsi translation of the quote. Example for an Arabic quote: \\"{\\\\\\"surah\\\\\\": \\\\\\"سورة الفاتحة\\\\\\", \\\\\\"quote_translation\\\\\\": \\\\\\"به نام خداوند بخشنده مهربان\\\\\\"}\\". Example for a Farsi quote: \\"{\\\\\\"surah\\\\\\": \\\\\\"سوره بقره\\\\\\"}\\". This entire field MUST be in Farsi, except for the JSON structure itself.",
         "type": "str",
         "default": "None"
       }
@@ -58,12 +58,19 @@ except Exception as e:
 ESCAPED_OUTPUT_SCHEMA_DESCRIPTION = OUTPUT_SCHEMA_DESCRIPTION.replace("{", "{{").replace("}", "}}")
 
 EXAMPLE_JSON_CONTENT = """[
-  {  # Start of example JSON object
-    "quote_text": "The best way to predict the future is to create it.",
-    "speaker": "Peter Drucker",
-    "context": "Discussing proactive approaches to business strategy and innovation.",
-    "topic": "Future and Creation",
-    "additional_info": "Often attributed to Peter Drucker, emphasizing agency."
+  {
+    "quote_text": "بسم الله الرحمن الرحيم",
+    "speaker": "النبي محمد (ص)",
+    "context": "سياق المثال",
+    "topic": "الموضوع",
+    "additional_info": "{\\"surah\\": \\"سورة الفاتحة\\", \\"quote_translation\\": \\"به نام خداوند بخشنده مهربان\\"}"
+  },
+  {
+    "quote_text": "این یک نقل قول فارسی است",
+    "speaker": "سخنران فرضی",
+    "context": "زمینه نمونه",
+    "topic": "موضوع نمونه",
+    "additional_info": "{\\"surah\\": \\"سوره بقره\\"}"
   }
 ]"""
 ESCAPED_EXAMPLE_JSON_CONTENT = EXAMPLE_JSON_CONTENT.replace("{", "{{").replace("}", "}}")
@@ -79,11 +86,11 @@ Each object in the list MUST conform to the following JSON schema, detailing the
 ```
 
 Key instructions for extraction:
-1.  **`quote_text`**: This MUST be the verbatim text of the saying or statement. Do not paraphrase.
-2.  **`speaker`**: Identify who made the statement. If explicitly mentioned (e.g., "John said...", "...replied Mary"), use that name. If implied by context, use the name. If it's general narration or the speaker is truly unknown, use "Unknown" or "Narrator" as appropriate. If the text indicates a source (e.g. "a wise man once said"), use that.
-3.  **`context`**: Briefly describe the situation in which the quote was made. What was happening, being discussed, or what led to the statement?
-4.  **`topic`**: Provide a concise keyword or short phrase for the main theme or subject of the quote (e.g., "Wisdom", "Courage", "On Patience", "The nature of good deeds").
-5.  **`additional_info`**: Include any other relevant details. For instance, was it a response to a question? Was it directed at a specific person or group? Is there a specific cultural or historical nuance mentioned? If none, this field can be omitted or null.
+1.  **`quote_text`**: This MUST be the verbatim text of the saying or statement. Do NOT translate the `quote_text`.
+2.  **`speaker`**: Identify who made the statement. This field MUST be in Farsi. If explicitly mentioned (e.g., "John said...", "...replied Mary"), use that name. If implied by context, use the name. If it's general narration or the speaker is truly unknown, use "Unknown" or "Narrator" as appropriate (in Farsi, e.g., "ناشناس" یا "راوی"). If the text indicates a source (e.g. "a wise man once said"), use that (in Farsi).
+3.  **`context`**: Briefly describe the situation in which the quote was made. What was happening, being discussed, or what led to the statement? This field MUST be in Farsi.
+4.  **`topic`**: Provide a concise keyword or short phrase for the main theme or subject of the quote (e.g., "صبر", "دانش", "صدقه"). This field MUST be in Farsi.
+5.  **`additional_info`**: This field MUST be a JSON string. It must include a 'surah' key with the Surah name in Farsi (e.g., "سوره فاتحه"). If the `quote_text` is in Arabic, the JSON string MUST also include a 'quote_translation' key with the Farsi translation of the `quote_text`. For example, if `quote_text` is "بسم الله الرحمن الرحيم", `additional_info` would be "{{\\"surah\\": \\"سورة الفاتحة\\", \\"quote_translation\\": \\"به نام خداوند بخشنده مهربان\\"}}". If `quote_text` is already in Farsi, `additional_info` would be "{{\\"surah\\": \\"سوره بقره\\"}}". All text values within the JSON string (like Surah name and translation) MUST be in Farsi.
 
 Output Requirements:
 - Your entire response MUST be a single JSON list.
@@ -102,7 +109,7 @@ Text chunk to analyze:
 {{text_chunk}}
 -----------------------------------
 
-Example of a valid response with one quote:
+Example of a valid response with quotes:
 ```json
 {ESCAPED_EXAMPLE_JSON_CONTENT}
 ```
@@ -149,5 +156,3 @@ if __name__ == '__main__':
         print("Could not import QuoteLLM from .schemas. Ensure schemas.py is in the same directory (or package structure is correct) and there are no circular imports.")
     except Exception as e:
         print(f"An error occurred while accessing QuoteLLM schema: {e}")
-
-
