@@ -10,13 +10,17 @@ The current focus is on initializing the project's memory bank with comprehensiv
 *   **Unique Composite Index Implemented:** A unique composite index on `epub_source_identifier` and `quote_text` has been added to the `QuoteDB` model in `schemas.py` to prevent duplicate quote entries.
 *   **Database Conflict Handling:** The `save_quotes_to_db` function in `database.py` has been modified to use `ON CONFLICT DO NOTHING` for PostgreSQL inserts, leveraging the new `to_dict()` method on `QuoteDB` for proper data mapping.
 *   **Chunking Overlap Added:** The `chunk_text` function in `epub_parser.py` now supports an `overlap_size` parameter.
-*   **Main Script Updated for Overlap:** `main.py` has been updated to accept `--overlap-size` as a command-line argument and pass it to the `chunk_text` function. **The `DEFAULT_OVERLAP_SIZE` in `main.py` is now dynamically calculated as 0.1 of `DEFAULT_MAX_CHUNK_SIZE`.**
+*   **Main Script Updated for Overlap:** `main.py` has been updated to accept `--overlap-size` as a command-line argument and pass it to the `chunk_text` function. The `DEFAULT_OVERLAP_SIZE` in `main.py` is now dynamically calculated as 0.1 of `DEFAULT_MAX_CHUNK_SIZE`.
+*   **Progress Tracking Implemented:**
+    *   A `ProgressDB` model has been added to `schemas.py` to store `epub_filepath` and `last_processed_chunk_index`.
+    *   `save_progress`, `load_progress`, and `clear_progress` functions have been added to `database.py` to manage progress persistence.
+    *   `main.py` now integrates these functions to enable resuming processing from the last saved chunk and clearing progress upon completion.
 
 ## Next Steps
 
 1.  **Environment Setup:** Set up the Python virtual environment and install all necessary dependencies as specified in `requirements.txt`.
-2.  **Database Migration Setup:** Initialize Alembic for database migrations, ensuring it integrates with the existing SQLAlchemy models defined in `schemas.py` (this is crucial for applying the new unique constraint).
-3.  **EPUB Page Number Refinement:** Continue to investigate and implement more precise page number extraction from EPUBs, or enhance the `epub_source_identifier` if possible, as the current implementation relies on section IDs.
+2.  **Database Migration Setup:** Initialize Alembic for database migrations, ensuring it integrates with the existing SQLAlchemy models (`QuoteDB` and `ProgressDB`). This is crucial for applying the new unique constraint and the `progress` table to the database.
+3.  **EPUB Page Number Refinement:** Continue to investigate and implement more precise page number extraction from EPUBs, or enhance `epub_source_identifier` if possible, beyond just section IDs.
 4.  **LLM Prompt Optimization:** Further fine-tune the LLM prompts to improve extraction accuracy, especially for diverse EPUB content and complex quote structures.
 5.  **Comprehensive Error Handling:** Enhance error handling across all modules, particularly for edge cases in EPUB parsing (e.g., malformed EPUBs), LLM response failures, and database integrity issues.
 6.  **Testing:** Develop a comprehensive suite of unit, integration, and end-to-end tests to ensure reliability and correctness of the entire pipeline.
@@ -30,12 +34,13 @@ The current focus is on initializing the project's memory bank with comprehensiv
 *   **`epub_source_identifier`:** Currently uses chapter/section IDs (`Section ID: {item.get_id()}`) as implemented in `epub_parser.py`. Direct page number extraction is noted as complex and not yet fully implemented. This is a deviation from the "if feasible" part of the original brief, and will be a point of future refinement.
 *   **Database Fallback:** The `database.py` module includes a fallback to SQLite if PostgreSQL environment variables are not properly configured, which is a useful development feature.
 *   **LLM Response Robustness:** `llm_handler.py` includes logic to handle cases where the LLM might return a single JSON object instead of a list, and sanitizes keys, improving robustness.
-*   **Chunking Overlap:** Implemented with a default of 200 characters, configurable via `main.py`. This enhances LLM context.
+*   **Chunking Overlap:** Implemented with a default of 200 characters (dynamically calculated as 10% of max chunk size), configurable via `main.py`. This enhances LLM context.
 *   **Duplicate Prevention:** Implemented at the database level using a unique composite index and `ON CONFLICT DO NOTHING`, ensuring data integrity.
+*   **Progress Persistence:** Implemented using a dedicated `progress` table in the database, allowing for robust pause/resume functionality.
 
 ## Learnings and Project Insights
 
 *   The core structure for LLM interaction (Langchain, Gemini, structured output) and database persistence (SQLAlchemy, PostgreSQL/SQLite) is well-established.
 *   Prompt engineering is critical and well-addressed with dynamic schema injection and detailed instructions.
 *   The challenge of precise page number extraction from EPUBs remains a key area for potential future enhancement.
-*   The project now has robust mechanisms for handling LLM calls, preventing database duplicates, and managing text context through chunking overlap.
+*   The project now has robust mechanisms for handling LLM calls, preventing database duplicates, managing text context through chunking overlap, and persisting processing progress.

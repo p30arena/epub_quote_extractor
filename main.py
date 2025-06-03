@@ -7,7 +7,7 @@ from typing import List, Dict, Any
 
 from epub_parser import extract_text_from_epub, chunk_text
 from llm_handler import analyze_text_with_gemini, DEFAULT_MODEL_NAME as LLM_DEFAULT_MODEL # import model name
-from database import create_db_and_tables, get_db, save_quotes_to_db
+from database import create_db_and_tables, get_db, save_quotes_to_db, load_progress, save_progress, clear_progress # Import progress functions
 from schemas import QuoteLLM # For validation
 
 # Pydantic is needed for QuoteLLM validation
@@ -65,6 +65,21 @@ def main():
         print("Please check your database configuration (e.g., in .env) and ensure the database server is operational.")
         return
 
+    # Initialize database session for progress tracking and main operations
+    db_session_gen = get_db()
+    db = next(db_session_gen)
+
+    # Load existing progress
+    start_chunk_index = 0
+    try:
+        loaded_progress_index = load_progress(db, str(epub_file.resolve())) # Use absolute path for consistency
+        if loaded_progress_index is not None:
+            start_chunk_index = loaded_progress_index + 1 # Start from the next chunk
+            print(f"Resuming processing from chunk index {start_chunk_index} for '{epub_file.name}'.")
+    except Exception as e:
+        print(f"Warning: Could not load previous progress for '{epub_file.name}': {e}. Starting from beginning.")
+        start_chunk_index = 0 # Fallback to start from beginning if progress loading fails
+
     print(f"\nStep 2: Processing EPUB file: {epub_file.name}")
     try:
         text_segments = extract_text_from_epub(str(epub_file))
@@ -84,6 +99,11 @@ def main():
             return
         print(f"  Segmented into {len(text_chunks)} processable text chunks.")
 
+        if start_chunk_index >= len(text_chunks):
+            print(f"All chunks for '{epub_file.name}' already processed according to saved progress. Clearing progress and exiting.")
+            clear_progress(db, str(epub_file.resolve()))
+            return
+
     except Exception as e:
         print(f"Error processing EPUB file '{epub_file.name}': {e}")
         return
@@ -92,14 +112,12 @@ def main():
     total_quotes_validated_and_saved = 0
     quotes_to_save_batch: List[Dict[str, Any]] = []
 
-    # Initialize database session
-    db_session_gen = get_db()
-    db = next(db_session_gen)
-
     print(f"\nStep 3: Starting quote extraction with LLM ({LLM_DEFAULT_MODEL})...")
+    print(f"  Starting from chunk {start_chunk_index + 1} of {len(text_chunks)}.")
 
     try:
-        for i, chunk_info in enumerate(text_chunks):
+        for i in range(start_chunk_index, len(text_chunks)):
+            chunk_info = text_chunks[i]
             chunk_source_preview = chunk_info['source'][:100].replace('\n', ' ')
             print(f"  Processing chunk {i + 1}/{len(text_chunks)} (Source: '{chunk_source_preview}...', Length: {len(chunk_info['text'])} chars)")
 
@@ -157,6 +175,12 @@ def main():
                 # This means analyze_text_with_gemini had a critical failure after all retries
                 print(f"    Failed to get response from LLM for chunk {i + 1} after retries. Skipping this chunk.")
 
+            # Save progress after each chunk is processed
+            try:
+                save_progress(db, str(epub_file.resolve()), i)
+            except Exception as e_save_progress:
+                print(f"Warning: Could not save progress for chunk {i} of '{epub_file.name}': {e_save_progress}")
+
         # Save any remaining quotes in the final batch
         if quotes_to_save_batch:
             try:
@@ -166,6 +190,10 @@ def main():
                 quotes_to_save_batch.clear()
             except Exception as e_db_final_save:
                 print(f"    Error saving final batch to database: {e_db_final_save}.")
+
+        # Clear progress if all chunks were processed successfully
+        print(f"All {len(text_chunks)} chunks processed for '{epub_file.name}'. Clearing progress.")
+        clear_progress(db, str(epub_file.resolve()))
 
     except Exception as e_main_loop:
         print(f"Caught an exception in main processing loop. Type: {type(e_main_loop)}")
@@ -178,11 +206,6 @@ def main():
         print("\nStep 4: Finalizing operations.")
         print("  Closing database session...")
         try:
-            # The generator pattern for get_db() ensures 'finally' in get_db closes the session.
-            # Calling next() might not be what's intended if the session is already yielded.
-            # Instead, rely on the 'finally' block within 'get_db()'.
-            # For explicit closure, one might pass the session object around and close it directly.
-            # However, the provided `get_db` pattern handles closure.
             db.close() # Explicitly close the session obtained from `next(db_session_gen)`
             print("  Database session closed.")
         except Exception as e_close:

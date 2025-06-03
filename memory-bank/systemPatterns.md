@@ -14,7 +14,7 @@ The system will follow a modular architecture, separating concerns into distinct
 *   **Langchain for LLM Orchestration:** Confirmed as the framework for managing LLM interactions, prompt templating, and structured output parsing.
 *   **Google Gemini 2.5 Flash:** Confirmed as the specific LLM, with strict adherence to "gemini-2.0-flash" or "gemini-2.5-flash-preview-05-20" enforced in `llm_handler.py`.
 *   **Structured Outputs (Pydantic):** Pydantic models (`QuoteLLM` in `schemas.py`) are explicitly used to define the expected output schema from the LLM, and this schema is dynamically injected into the LLM prompt in `prompts.py`.
-*   **PostgreSQL for Data Storage (SQLAlchemy):** SQLAlchemy ORM is used for database interaction, with PostgreSQL as the primary target. A fallback to SQLite is implemented in `database.py` for development convenience. **Unique composite index on `epub_source_identifier` and `quote_text` is implemented in `schemas.py` to prevent duplicates.**
+*   **PostgreSQL for Data Storage (SQLAlchemy):** SQLAlchemy ORM is used for database interaction, with PostgreSQL as the primary target. A fallback to SQLite is implemented in `database.py` for development convenience. Unique composite index on `epub_source_identifier` and `quote_text` is implemented in `schemas.py` to prevent duplicates. **A new `ProgressDB` model is added to `schemas.py` for tracking processing state.**
 *   **Alembic for Database Migrations:** Planned for managing schema changes over time, integrating with SQLAlchemy models defined in `schemas.py`.
 
 ## Design Patterns in Use
@@ -26,6 +26,7 @@ The system will follow a modular architecture, separating concerns into distinct
 *   **Retry Mechanism:** Implemented in `llm_handler.py` for robust LLM API calls.
 *   **Chunking with Overlap:** Implemented in `epub_parser.py` to provide better context to the LLM and prevent missed quotes at chunk boundaries.
 *   **Upsert/Conflict Handling:** `ON CONFLICT DO NOTHING` strategy implemented in `database.py` for PostgreSQL to gracefully handle attempts to insert duplicate quotes.
+*   **Progress Tracking:** Implemented using a dedicated `ProgressDB` table and associated functions (`save_progress`, `load_progress`, `clear_progress`) in `database.py` and integrated into `main.py` for pause/resume functionality.
 
 ## Component Relationships
 

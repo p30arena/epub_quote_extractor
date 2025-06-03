@@ -30,6 +30,19 @@ class QuoteLLM(BaseModel):
 # SQLAlchemy base model
 Base = declarative_base()
 
+# SQLAlchemy model for tracking processing progress
+class ProgressDB(Base):
+    __tablename__ = "progress"
+
+    id: int = Column(Integer, primary_key=True, index=True)
+    epub_filepath: str = Column(String(1024), unique=True, nullable=False, index=True,
+                                comment="Absolute path to the EPUB file being processed.")
+    last_processed_chunk_index: int = Column(Integer, nullable=False, default=0,
+                                             comment="The index of the last chunk successfully processed for this EPUB.")
+
+    def __repr__(self):
+        return f"<ProgressDB(id={self.id}, epub_filepath='{self.epub_filepath[:50]}...', last_processed_chunk_index={self.last_processed_chunk_index})>"
+
 # SQLAlchemy model for storing quotes in the database
 from sqlalchemy import UniqueConstraint
 
@@ -97,3 +110,26 @@ if __name__ == '__main__':
         print(db_quote_instance)
     except Exception as e:
         print(f"SQLAlchemy instance creation test failed: {e}")
+
+    print("\n--- SQLAlchemy Model Structure (ProgressDB) ---")
+    print(f"Table name: {ProgressDB.__tablename__}")
+    print("Columns:")
+    for column in ProgressDB.__table__.columns:
+        print(f"  - Name: {column.name}")
+        print(f"    Type: {column.type}")
+        print(f"    Primary Key: {column.primary_key}")
+        print(f"    Nullable: {column.nullable}")
+        print(f"    Index: {column.index}")
+        if hasattr(column, 'comment') and column.comment:
+            print(f"    Comment: {column.comment}")
+
+    # Example of creating a ProgressDB instance (not persisted to DB here)
+    try:
+        db_progress_instance = ProgressDB(
+            epub_filepath="/path/to/my/book.epub",
+            last_processed_chunk_index=123
+        )
+        print("\nProgressDB instance created (not persisted):")
+        print(db_progress_instance)
+    except Exception as e:
+        print(f"ProgressDB instance creation test failed: {e}")

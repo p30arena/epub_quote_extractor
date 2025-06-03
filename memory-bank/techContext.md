@@ -27,6 +27,7 @@
 *   **JSON Format for `additional_info`:** This field must be a valid JSON string, allowing for flexible storage of extra metadata, including the "quote_translation" and "Surah" information. This is enforced by `schemas.py` and handled in `main.py` and `prompts.py`.
 *   **`epub_source_identifier` Content:** Currently, `epub_parser.py` uses chapter/section IDs (e.g., "Section ID: html7927") for `epub_source_identifier` due to the complexity of precise page number extraction from reflowable EPUB content. Further investigation is needed if explicit page numbers are a strict requirement.
 *   **Duplicate Quote Prevention:** Implemented via a unique composite index on `epub_source_identifier` and `quote_text` in `schemas.py`, and `ON CONFLICT DO NOTHING` in `database.py` for PostgreSQL.
+*   **Progress Persistence:** Implemented using a dedicated `ProgressDB` table in `schemas.py` and associated functions (`save_progress`, `load_progress`, `clear_progress`) in `database.py`, integrated into `main.py` for pause/resume functionality.
 
 ## Tool Usage Patterns
 

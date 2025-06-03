@@ -3,11 +3,11 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, insert
 from sqlalchemy.orm import sessionmaker, Session
-from typing import List, Generator, Any
+from typing import List, Generator, Any, Optional
 
 # Relative import for schemas
-from schemas import Base, QuoteDB
-from sqlalchemy.dialects import postgresql # For on_conflict_do_nothing
+from schemas import Base, QuoteDB, ProgressDB
+from sqlalchemy.dialects import postgresql # For on_conflict_do_nothing and on_conflict_do_update
 
 # Load environment variables from .env file
 load_dotenv()
@@ -117,6 +117,73 @@ def save_quotes_to_db(db: Session, quotes_data: List[dict]) -> int:
         # Re-raise the exception to be caught by the main loop for logging
         raise
 
+def save_progress(db: Session, epub_filepath: str, last_processed_chunk_index: int):
+    """
+    Saves or updates the processing progress for a given EPUB file.
+    Uses ON CONFLICT DO UPDATE for PostgreSQL.
+    """
+    if DB_ENGINE_TYPE == "postgresql":
+        stmt = postgresql.insert(ProgressDB).values(
+            epub_filepath=epub_filepath,
+            last_processed_chunk_index=last_processed_chunk_index
+        )
+        on_conflict_stmt = stmt.on_conflict_do_update(
+            index_elements=['epub_filepath'], # Unique index on epub_filepath
+            set_=dict(last_processed_chunk_index=last_processed_chunk_index)
+        )
+        try:
+            db.execute(on_conflict_stmt)
+            db.commit()
+            print(f"Progress saved for '{epub_filepath}': chunk {last_processed_chunk_index}")
+        except Exception as e:
+            db.rollback()
+            print(f"Error saving progress for '{epub_filepath}': {e}")
+            raise
+    else:
+        # For SQLite, a simpler approach: try to update, if not found, insert
+        existing_progress = db.query(ProgressDB).filter(ProgressDB.epub_filepath == epub_filepath).first()
+        if existing_progress:
+            existing_progress.last_processed_chunk_index = last_processed_chunk_index
+            print(f"Progress updated for '{epub_filepath}': chunk {last_processed_chunk_index}")
+        else:
+            new_progress = ProgressDB(epub_filepath=epub_filepath, last_processed_chunk_index=last_processed_chunk_index)
+            db.add(new_progress)
+            print(f"Progress inserted for '{epub_filepath}': chunk {last_processed_chunk_index}")
+        try:
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            print(f"Error saving progress for '{epub_filepath}': {e}")
+            raise
+
+def load_progress(db: Session, epub_filepath: str) -> Optional[int]:
+    """
+    Loads the last processed chunk index for a given EPUB file.
+    Returns the index or None if no progress is found.
+    """
+    progress_entry = db.query(ProgressDB).filter(ProgressDB.epub_filepath == epub_filepath).first()
+    if progress_entry:
+        print(f"Loaded progress for '{epub_filepath}': last processed chunk {progress_entry.last_processed_chunk_index}")
+        return progress_entry.last_processed_chunk_index
+    print(f"No saved progress found for '{epub_filepath}'.")
+    return None
+
+def clear_progress(db: Session, epub_filepath: str):
+    """
+    Clears the processing progress for a given EPUB file.
+    """
+    try:
+        deleted_count = db.query(ProgressDB).filter(ProgressDB.epub_filepath == epub_filepath).delete()
+        db.commit()
+        if deleted_count > 0:
+            print(f"Progress cleared for '{epub_filepath}'.")
+        else:
+            print(f"No progress found to clear for '{epub_filepath}'.")
+    except Exception as e:
+        db.rollback()
+        print(f"Error clearing progress for '{epub_filepath}': {e}")
+        raise
+
 if __name__ == '__main__':
     print(f"--- Database Module ({DB_ENGINE_TYPE}) Main Execution ---")
 
@@ -168,7 +235,25 @@ if __name__ == '__main__':
             else:
                  print(f"This might be due to file system permissions or issues with the SQLite file.")
         finally:
-            db_for_test.close()
+            # db_for_test.close() # Already closed by get_db generator's finally block
+            pass # Keep this for clarity, as get_db handles closure
+
+        print("\n--- Example: Progress Tracking ---")
+        test_epub_path = "/path/to/test_book.epub"
+        test_chunk_index = 5
+
+        # Test saving progress
+        save_progress(db_for_test, test_epub_path, test_chunk_index)
+        save_progress(db_for_test, test_epub_path, test_chunk_index + 1) # Update progress
+
+        # Test loading progress
+        loaded_index = load_progress(db_for_test, test_epub_path)
+        print(f"Loaded index: {loaded_index}, Expected: {test_chunk_index + 1}")
+
+        # Test clearing progress
+        clear_progress(db_for_test, test_epub_path)
+        re_loaded_index = load_progress(db_for_test, test_epub_path)
+        print(f"Re-loaded index after clear: {re_loaded_index}, Expected: None")
 
     except Exception as e_main:
         db_location = DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL and DB_ENGINE_TYPE == "postgresql" else DATABASE_URL
