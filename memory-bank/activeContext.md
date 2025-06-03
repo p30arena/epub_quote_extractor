@@ -9,8 +9,8 @@ The current focus is on initializing the project's memory bank with comprehensiv
 *   **Memory Bank Initialized & Updated:** All core memory bank files have been created and subsequently updated to reflect the current state of the codebase.
 *   **Unique Composite Index Implemented:** A unique composite index on `epub_source_identifier` and `quote_text` has been added to the `QuoteDB` model in `schemas.py` to prevent duplicate quote entries.
 *   **Database Conflict Handling:** The `save_quotes_to_db` function in `database.py` has been modified to use `ON CONFLICT DO NOTHING` for PostgreSQL inserts, leveraging the new `to_dict()` method on `QuoteDB` for proper data mapping.
-*   **Chunking Overlap Added:** The `chunk_text` function in `epub_parser.py` now supports an `overlap_size` parameter (defaulting to 200 characters) to ensure better context for the LLM across chunk boundaries.
-*   **Main Script Updated for Overlap:** `main.py` has been updated to accept `--overlap-size` as a command-line argument and pass it to the `chunk_text` function.
+*   **Chunking Overlap Added:** The `chunk_text` function in `epub_parser.py` now supports an `overlap_size` parameter.
+*   **Main Script Updated for Overlap:** `main.py` has been updated to accept `--overlap-size` as a command-line argument and pass it to the `chunk_text` function. **The `DEFAULT_OVERLAP_SIZE` in `main.py` is now dynamically calculated as 0.1 of `DEFAULT_MAX_CHUNK_SIZE`.**
 
 ## Next Steps
 
