@@ -28,6 +28,7 @@ The system will follow a modular architecture, separating concerns into distinct
 *   **Upsert/Conflict Handling:** `ON CONFLICT DO NOTHING` strategy implemented in `database.py` for PostgreSQL to gracefully handle attempts to insert duplicate quotes.
 *   **Progress Tracking:** Implemented using a dedicated `ProgressDB` table and associated functions (`save_progress`, `load_progress`, `clear_progress`) in `database.py` and integrated into `main.py` for pause/resume functionality.
 *   **Conversational Quote Prompting:** The LLM prompt (`prompts.py`) has been refined to explicitly guide the model in identifying and combining consecutive conversational turns into a single quote, enhancing the coherence of extracted dialogues.
+*   **Heuristic-based Page Estimation:** Implemented in `epub_parser.py` to provide an estimated page number for each text chunk, which is then used in `main.py` to enhance the `epub_source_identifier`.
 
 ## Component Relationships
 

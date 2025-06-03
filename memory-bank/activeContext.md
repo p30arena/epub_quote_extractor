@@ -16,12 +16,13 @@ The current focus is on initializing the project's memory bank with comprehensiv
     *   `save_progress`, `load_progress`, and `clear_progress` functions have been added to `database.py` to manage progress persistence.
     *   `main.py` now integrates these functions to enable resuming processing from the last saved chunk and clearing progress upon completion.
 *   **LLM Prompt Refinement for Conversational Quotes:** The `QUOTE_EXTRACTION_PROMPT_TEMPLATE` in `prompts.py` has been updated to explicitly instruct the LLM to combine consecutive conversational turns into a single `quote_text` entry, with guidance on handling `speaker` and `context` for such cases.
+*   **Heuristic-based Page Estimation Implemented:** `epub_parser.py` now includes a `CHARS_PER_ESTIMATED_PAGE` constant (set to 2000) and the `chunk_text` function calculates an `estimated_page` number for each chunk. `main.py` has been updated to incorporate this estimated page number into the `epub_source_identifier` (e.g., "Section ID: {section_id} (Est. Page: {estimated_page_number})").
 
 ## Next Steps
 
 1.  **Environment Setup:** Set up the Python virtual environment and install all necessary dependencies as specified in `requirements.txt`.
 2.  **Database Migration Setup:** Initialize Alembic for database migrations, ensuring it integrates with the existing SQLAlchemy models (`QuoteDB` and `ProgressDB`). This is crucial for applying the new unique constraint and the `progress` table to the database.
-3.  **EPUB Page Number Refinement:** Continue to investigate and implement more precise page number extraction from EPUBs, or enhance `epub_source_identifier` if possible, beyond just section IDs.
+3.  **EPUB Page Number Refinement (Phase 2 & 3):** Continue to investigate and implement more precise page number extraction from EPUBs, or enhance `epub_source_identifier` if possible, beyond just section IDs and current heuristic. This includes exploring structural metadata and LLM-assisted extraction if needed.
 4.  **LLM Prompt Optimization:** Further fine-tune the LLM prompts to improve extraction accuracy, especially for diverse EPUB content and complex quote structures.
 5.  **Comprehensive Error Handling:** Enhance error handling across all modules, particularly for edge cases in EPUB parsing (e.g., malformed EPUBs), LLM response failures, and database integrity issues.
 6.  **Testing:** Develop a comprehensive suite of unit, integration, and end-to-end tests to ensure reliability and correctness of the entire pipeline.
@@ -32,7 +33,7 @@ The current focus is on initializing the project's memory bank with comprehensiv
 *   **LLM Model Version:** Confirmed strict adherence to "gemini-2.0-flash" or "gemini-2.5-flash-preview-05-20" in `llm_handler.py`.
 *   **Multilingual Fields:** Implementation in `prompts.py` and `schemas.py` confirms the handling of Farsi/Arabic for `speaker`, `context`, `topic`, `additional_info`, and no translation for `quote_text`.
 *   **`additional_info` JSON Structure:** Confirmed the JSON format for `additional_info` including `surah` and optional `quote_translation` in `schemas.py` and `prompts.py`.
-*   **`epub_source_identifier`:** Currently uses chapter/section IDs (`Section ID: {item.get_id()}`) as implemented in `epub_parser.py`. Direct page number extraction is noted as complex and not yet fully implemented. This is a deviation from the "if feasible" part of the original brief, and will be a point of future refinement.
+*   **`epub_source_identifier`:** Now includes an estimated page number based on character count (e.g., "Section ID: {item.get_id()} (Est. Page: {estimated_page_number})"). This is a significant improvement over just section IDs, though true page numbers remain a challenge.
 *   **Conversational Quote Handling:** A specific instruction has been added to the LLM prompt to group consecutive conversational turns into a single quote, with guidelines for `speaker` and `context` fields.
 *   **Database Fallback:** The `database.py` module includes a fallback to SQLite if PostgreSQL environment variables are not properly configured, which is a useful development feature.
 *   **LLM Response Robustness:** `llm_handler.py` includes logic to handle cases where the LLM might return a single JSON object instead of a list, and sanitizes keys, improving robustness.

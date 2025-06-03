@@ -149,7 +149,8 @@ def main():
 
                             # Prepare data for QuoteDB model
                             db_quote_data = validated_quote.model_dump() # Convert Pydantic model to dict
-                            db_quote_data['epub_source_identifier'] = chunk_info['source'] # Add the source identifier
+                            # Add the source identifier including the estimated page number
+                            db_quote_data['epub_source_identifier'] = f"{chunk_info['source']} (Est. Page: {chunk_info['estimated_page']})"
 
                             quotes_to_save_batch.append(db_quote_data)
                             # print(f"      + Valid quote added to batch: '{validated_quote.quote_text[:60]}...'")

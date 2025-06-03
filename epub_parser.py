@@ -3,6 +3,11 @@ import ebooklib
 from ebooklib import epub
 from bs4 import BeautifulSoup
 
+# Constant for estimated characters per page for heuristic page numbering
+# This is an approximation based on standard book sizes and word counts.
+# 2000 characters is roughly 300-400 words, which is a common page density.
+CHARS_PER_ESTIMATED_PAGE = 2000
+
 # Placeholder comment about page numbers
 # Page number extraction in EPUBs is complex due to reflowable content.
 # We will use chapter/section names or item IDs for grounding.
@@ -40,6 +45,7 @@ def extract_text_from_epub(epub_path: str) -> list[dict[str, str]]:
 def chunk_text(text_segments: list[dict[str, str]], max_chunk_size: int, overlap_size: int = 200) -> list[dict[str, str]]:
     """
     Chunks text segments into smaller pieces of a maximum specified size, with overlap.
+    Each chunk will also have an 'estimated_page' number based on a global character count.
 
     Args:
         text_segments: A list of dictionaries from extract_text_from_epub.
@@ -47,16 +53,19 @@ def chunk_text(text_segments: list[dict[str, str]], max_chunk_size: int, overlap
         overlap_size: The number of characters to overlap between consecutive chunks.
 
     Returns:
-        A new list of dictionaries, each with 'source' and 'text' (the chunked text).
+        A new list of dictionaries, each with 'source', 'text' (the chunked text),
+        and 'estimated_page' (the estimated page number for the start of the chunk).
     """
     chunked_segments = []
+    current_total_chars = 0  # Track total characters processed across all segments for global page estimation
+
     if max_chunk_size <= 0:
         raise ValueError("max_chunk_size must be a positive integer.")
     if overlap_size < 0:
         raise ValueError("overlap_size cannot be negative.")
     if overlap_size >= max_chunk_size:
         print(f"Warning: overlap_size ({overlap_size}) is greater than or equal to max_chunk_size ({max_chunk_size}). Setting overlap_size to 0 to avoid infinite loops or empty chunks.")
-        overlap_size = 0 # Prevent infinite loop or empty chunks if overlap is too large
+        overlap_size = 0  # Prevent infinite loop or empty chunks if overlap is too large
 
     for segment in text_segments:
         text = segment['text']
@@ -67,17 +76,28 @@ def chunk_text(text_segments: list[dict[str, str]], max_chunk_size: int, overlap
         while i < text_len:
             end_index = min(i + max_chunk_size, text_len)
             chunk_content = text[i:end_index]
-            chunked_segments.append({'source': source, 'text': chunk_content})
+
+            # Calculate estimated page number for this chunk
+            # The page number is based on the start of the chunk relative to the total characters processed so far
+            estimated_page_number = (current_total_chars // CHARS_PER_ESTIMATED_PAGE) + 1
+
+            chunked_segments.append({
+                'source': source,
+                'text': chunk_content,
+                'estimated_page': estimated_page_number  # Add estimated page number
+            })
             
+            # Update total characters processed by the actual length of the chunk added
+            current_total_chars += len(chunk_content)
+
             # Move the starting index for the next chunk
-            # If we're at the end or near the end, don't apply overlap
             if end_index == text_len:
                 break
             
             i += (max_chunk_size - overlap_size)
-            # Ensure i doesn't go past the end of the text if overlap is large
-            if i < 0: # This can happen if max_chunk_size - overlap_size is negative
-                i = 0 # Reset to 0 to avoid issues, effectively no overlap for this small remaining part
+            # Ensure i doesn't go past the end of the text if overlap is large or remaining text is small
+            if i < 0:
+                i = 0
             
     return chunked_segments
 
