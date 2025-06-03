@@ -31,8 +31,11 @@ class QuoteLLM(BaseModel):
 Base = declarative_base()
 
 # SQLAlchemy model for storing quotes in the database
+from sqlalchemy import UniqueConstraint
+
 class QuoteDB(Base):
     __tablename__ = "quotes"
+    __table_args__ = (UniqueConstraint('epub_source_identifier', 'quote_text', name='_epub_quote_uc'),)
 
     id: int = Column(Integer, primary_key=True, index=True)
     # This field will store the 'source' (chapter/section identifier) from epub_parser.py
@@ -45,6 +48,10 @@ class QuoteDB(Base):
 
     def __repr__(self):
         return f"<QuoteDB(id={self.id}, speaker='{self.speaker}', topic='{self.topic}', source='{self.epub_source_identifier[:30]}...')>"
+
+    def to_dict(self):
+        """Converts the SQLAlchemy model instance to a dictionary."""
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 if __name__ == '__main__':
     # Basic test for Pydantic model

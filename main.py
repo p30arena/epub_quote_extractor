@@ -25,6 +25,7 @@ except ImportError:
 
 
 DEFAULT_MAX_CHUNK_SIZE = 15000 # Characters. Adjusted based on typical LLM input sizes for single calls.
+DEFAULT_OVERLAP_SIZE = DEFAULT_MAX_CHUNK_SIZE * 0.1 # Characters. Default overlap for chunking.
 DEFAULT_DB_BATCH_SIZE = 10
 
 def main():
@@ -35,6 +36,12 @@ def main():
         type=int,
         default=DEFAULT_MAX_CHUNK_SIZE,
         help=f"Maximum size of text chunks (characters) sent to the LLM (default: {DEFAULT_MAX_CHUNK_SIZE}). This is passed to the chunk_text function."
+    )
+    parser.add_argument(
+        "--overlap-size",
+        type=int,
+        default=DEFAULT_OVERLAP_SIZE,
+        help=f"Number of characters to overlap between consecutive text chunks (default: {DEFAULT_OVERLAP_SIZE}). This is passed to the chunk_text function."
     )
     parser.add_argument(
         "--batch-size",
@@ -67,9 +74,11 @@ def main():
         print(f"  Extracted {len(text_segments)} initial segments from EPUB.")
 
         actual_max_chunk_size = args.max_chunk_size
+        actual_overlap_size = args.overlap_size
         print(f"  Using max character chunk size for LLM input: {actual_max_chunk_size}")
+        print(f"  Using overlap size for chunking: {actual_overlap_size}")
 
-        text_chunks = chunk_text(text_segments, actual_max_chunk_size)
+        text_chunks = chunk_text(text_segments, actual_max_chunk_size, actual_overlap_size)
         if not text_chunks:
             print("No text chunks to process after segmentation and chunking.")
             return

@@ -10,6 +10,7 @@
 *   **EPUB Parsing:** `ebooklib` and `BeautifulSoup` (used in `epub_parser.py`)
 *   **Data Validation/Serialization:** Pydantic (used in `schemas.py` for `QuoteLLM` and `main.py` for validation)
 *   **Environment Variables:** `python-dotenv` (used in `database.py` and `llm_handler.py`)
+*   **Text Chunking:** Custom implementation in `epub_parser.py` with configurable overlap.
 
 ## Development Setup
 
@@ -20,11 +21,12 @@
 
 ## Technical Constraints
 
-*   **LLM Context Window:** The LLM must be fed 20-30% of its context window with relevant pages to ensure proper grounding. This implies careful chunking and selection of text from the EPUB.
-*   **Specific LLM Versions:** Only "gemini-2.0-flash" or "gemini-2.5-flash-preview-05-20" are permitted. This requires explicit model selection in the Langchain integration.
-*   **Multilingual Output:** Specific fields (`speaker`, `context`, `topic`, `additional_info`) must adhere to Farsi/Arabic language requirements. `quote_text` must remain untranslated.
-*   **JSON Format for `additional_info`:** This field must be a valid JSON string, allowing for flexible storage of extra metadata, including the "quote_translation" and "Surah" information.
+*   **LLM Context Window:** The LLM must be fed 20-30% of its context window with relevant pages to ensure proper grounding. This is managed by `chunk_text` in `epub_parser.py` with `max_chunk_size` and `overlap_size`.
+*   **Specific LLM Versions:** Only "gemini-2.0-flash" or "gemini-2.5-flash-preview-05-20" are permitted, and this is strictly enforced in `llm_handler.py`.
+*   **Multilingual Output:** Specific fields (`speaker`, `context`, `topic`, `additional_info`) must adhere to Farsi/Arabic language requirements. `quote_text` must remain untranslated. This is handled by prompt engineering in `prompts.py`.
+*   **JSON Format for `additional_info`:** This field must be a valid JSON string, allowing for flexible storage of extra metadata, including the "quote_translation" and "Surah" information. This is enforced by `schemas.py` and handled in `main.py` and `prompts.py`.
 *   **`epub_source_identifier` Content:** Currently, `epub_parser.py` uses chapter/section IDs (e.g., "Section ID: html7927") for `epub_source_identifier` due to the complexity of precise page number extraction from reflowable EPUB content. Further investigation is needed if explicit page numbers are a strict requirement.
+*   **Duplicate Quote Prevention:** Implemented via a unique composite index on `epub_source_identifier` and `quote_text` in `schemas.py`, and `ON CONFLICT DO NOTHING` in `database.py` for PostgreSQL.
 
 ## Tool Usage Patterns
 

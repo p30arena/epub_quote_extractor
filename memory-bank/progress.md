@@ -2,19 +2,19 @@
 
 ## What Works
 
-*   **Memory Bank Initialized:** The foundational documentation for the project has been successfully created and organized.
-*   **Core Application Orchestration (`main.py`):** The main script is structured to handle argument parsing, EPUB processing, LLM interaction, and database saving. It integrates all other modules.
-*   **EPUB Parsing (`epub_parser.py`):** Basic text extraction from EPUBs by chapter/section is implemented using `ebooklib` and `BeautifulSoup`. Text chunking is also in place.
-*   **LLM Interaction (`llm_handler.py`):** Integration with Google Gemini API is set up, including API key handling, model whitelisting, structured JSON output configuration, retry mechanisms, and basic response parsing/sanitization.
-*   **Prompt Engineering (`prompts.py`):** A detailed LLM prompt template is defined, dynamically incorporating the Pydantic schema for structured output and explicitly instructing on multilingual requirements and JSON formatting for `additional_info`.
-*   **Data Models (`schemas.py`):** Pydantic (`QuoteLLM`) and SQLAlchemy (`QuoteDB`) models are defined, ensuring structured data for both LLM output validation and database persistence. The `additional_info` field is correctly modeled to handle JSON strings with `surah` and `quote_translation`.
-*   **Database Connection & Saving (`database.py`):** SQLAlchemy is configured for PostgreSQL connection (with SQLite fallback). Functions for creating tables and saving quotes in batches are implemented.
+*   **Memory Bank Initialized & Updated:** The foundational documentation has been created and updated to reflect the current codebase.
+*   **Core Application Orchestration (`main.py`):** Handles argument parsing, EPUB processing, LLM interaction, and database saving. Now includes `overlap_size` argument.
+*   **EPUB Parsing (`epub_parser.py`):** Extracts text by chapter/section using `ebooklib` and `BeautifulSoup`. **Now includes chunking with configurable `overlap_size` (default 200 chars).**
+*   **LLM Interaction (`llm_handler.py`):** Integrates with Google Gemini API, enforces model whitelisting, configures structured JSON output, and includes retry mechanisms and robust response parsing.
+*   **Prompt Engineering (`prompts.py`):** Dynamically incorporates Pydantic schema into LLM prompts, with detailed multilingual and JSON formatting instructions.
+*   **Data Models (`schemas.py`):** Defines Pydantic (`QuoteLLM`) and SQLAlchemy (`QuoteDB`) models. **`QuoteDB` now includes a `UniqueConstraint` on `epub_source_identifier` and `quote_text` to prevent duplicates, and a `to_dict()` method for database operations.**
+*   **Database Connection & Saving (`database.py`):** Configures SQLAlchemy for PostgreSQL (with SQLite fallback). **`save_quotes_to_db` now uses `ON CONFLICT DO NOTHING` for PostgreSQL inserts to handle duplicate entries gracefully.**
 
 ## What's Left to Build
 
 *   **Environment Setup:** The Python virtual environment needs to be activated and all dependencies from `requirements.txt` installed.
-*   **Database Migration Setup:** Alembic needs to be initialized and configured to manage schema changes for the `QuoteDB` model.
-*   **EPUB Page Number Refinement:** Investigate and implement more precise page number extraction from EPUBs, or enhance the `epub_source_identifier` if possible, as the current implementation relies on section IDs.
+*   **Database Migration Setup:** Alembic needs to be initialized and configured to manage schema changes for the `QuoteDB` model. This is crucial for applying the new unique constraint to the database.
+*   **EPUB Page Number Refinement:** Continue to investigate and implement more precise page number extraction from EPUBs, or enhance the `epub_source_identifier` if possible, as the current implementation relies on section IDs.
 *   **LLM Prompt Optimization:** Further fine-tune the LLM prompts to improve extraction accuracy, especially for diverse EPUB content and complex quote structures.
 *   **Comprehensive Error Handling:** Enhance error handling across all modules, particularly for edge cases in EPUB parsing (e.g., malformed EPUBs), LLM response failures, and database integrity issues.
 *   **Testing:** Develop a comprehensive suite of unit, integration, and end-to-end tests to ensure reliability and correctness of the entire pipeline.
@@ -22,7 +22,7 @@
 
 ## Current Status
 
-The project has a solid foundational implementation for its core components: EPUB parsing, LLM interaction with structured outputs, and database persistence. The data models and prompt engineering are well-defined. The next immediate steps involve setting up the development environment, configuring database migrations, and then focusing on refining existing components and adding comprehensive testing.
+The project has a robust foundational implementation for its core components, including EPUB parsing with overlap, LLM interaction with structured outputs, and database persistence with duplicate prevention. The data models and prompt engineering are well-defined. The immediate next steps involve setting up the development environment, configuring database migrations, and then focusing on refining existing components and adding comprehensive testing.
 
 ## Known Issues
 
