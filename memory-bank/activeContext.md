@@ -15,6 +15,7 @@ The current focus is on initializing the project's memory bank with comprehensiv
     *   A `ProgressDB` model has been added to `schemas.py` to store `epub_filepath` and `last_processed_chunk_index`.
     *   `save_progress`, `load_progress`, and `clear_progress` functions have been added to `database.py` to manage progress persistence.
     *   `main.py` now integrates these functions to enable resuming processing from the last saved chunk and clearing progress upon completion.
+*   **LLM Prompt Refinement for Conversational Quotes:** The `QUOTE_EXTRACTION_PROMPT_TEMPLATE` in `prompts.py` has been updated to explicitly instruct the LLM to combine consecutive conversational turns into a single `quote_text` entry, with guidance on handling `speaker` and `context` for such cases.
 
 ## Next Steps
 
@@ -32,6 +33,7 @@ The current focus is on initializing the project's memory bank with comprehensiv
 *   **Multilingual Fields:** Implementation in `prompts.py` and `schemas.py` confirms the handling of Farsi/Arabic for `speaker`, `context`, `topic`, `additional_info`, and no translation for `quote_text`.
 *   **`additional_info` JSON Structure:** Confirmed the JSON format for `additional_info` including `surah` and optional `quote_translation` in `schemas.py` and `prompts.py`.
 *   **`epub_source_identifier`:** Currently uses chapter/section IDs (`Section ID: {item.get_id()}`) as implemented in `epub_parser.py`. Direct page number extraction is noted as complex and not yet fully implemented. This is a deviation from the "if feasible" part of the original brief, and will be a point of future refinement.
+*   **Conversational Quote Handling:** A specific instruction has been added to the LLM prompt to group consecutive conversational turns into a single quote, with guidelines for `speaker` and `context` fields.
 *   **Database Fallback:** The `database.py` module includes a fallback to SQLite if PostgreSQL environment variables are not properly configured, which is a useful development feature.
 *   **LLM Response Robustness:** `llm_handler.py` includes logic to handle cases where the LLM might return a single JSON object instead of a list, and sanitizes keys, improving robustness.
 *   **Chunking Overlap:** Implemented with a default of 200 characters (dynamically calculated as 10% of max chunk size), configurable via `main.py`. This enhances LLM context.

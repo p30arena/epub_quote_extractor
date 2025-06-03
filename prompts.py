@@ -103,6 +103,7 @@ Consider the following when identifying quotes:
 - Reported speech (e.g., He said that..., She explained how...).
 - Significant statements or aphorisms presented as wisdom or teachings, even if not in direct quotes.
 - A "hadith" in this context is a saying, tradition, or account, often of a moral, religious, or wise nature.
+- **Conversational Quotes**: If multiple consecutive statements form a coherent conversation or dialogue, combine them into a single `quote_text` entry. For such combined quotes, the `speaker` should be the primary speaker, or a general term like 'گفتگوکنندگان' (Conversationalists) or 'چندین نفر' (Multiple people) in Farsi. The `context` should summarize the flow of the dialogue.
 
 Text chunk to analyze:
 -----------------------------------
