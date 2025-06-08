@@ -76,46 +76,59 @@ EXAMPLE_JSON_CONTENT = """[
 ESCAPED_EXAMPLE_JSON_CONTENT = EXAMPLE_JSON_CONTENT.replace("{", "{{").replace("}", "}}")
 
 # Define QUOTE_EXTRACTION_PROMPT_TEMPLATE using the escaped version
-QUOTE_EXTRACTION_PROMPT_TEMPLATE = f"""You are an expert assistant specialized in analyzing texts and extracting significant quotes, sayings, or "hadith" (which in a general sense means a saying or account).
-Your task is to carefully read the provided text chunk from an ebook and identify any such notable statements or sayings.
+QUOTE_EXTRACTION_PROMPT_TEMPLATE = f"""You are an expert assistant specialized in analyzing texts and extracting **complete, coherent hadith, revayat, sayings, or accounts**. Your primary goal is to identify and extract these full narratives, not fragmented sentences or partial statements.
 
-For each quote you identify, you MUST provide the information in a structured JSON format, as a list of JSON objects.
+Your task is to carefully read the provided text chunk from an ebook and identify any such notable hadith, revayat, or significant accounts.
+
+For each entry you identify, you MUST provide the information in a structured JSON format, as a list of JSON objects.
 Each object in the list MUST conform to the following JSON schema, detailing the expected fields:
 ```json
 {ESCAPED_OUTPUT_SCHEMA_DESCRIPTION}
 ```
 
+**Important Contextual Information**: The `text_chunk` provided below may include additional text from the preceding and succeeding sections of the book. This surrounding context is provided to help you identify complete hadith, revayat, or accounts that might span across original chunk boundaries. Use this context to ensure you extract the *entire* coherent narrative, even if it starts or ends outside the immediate focus area of the current chunk. Your primary goal is to identify and extract complete units, leveraging the provided context for continuity.
+
 Key instructions for extraction:
-1.  **`quote_text`**: This MUST be the verbatim text of the saying or statement. Do NOT translate the `quote_text`.
-2.  **`speaker`**: Identify who made the statement. This field MUST be in Farsi. If explicitly mentioned (e.g., "John said...", "...replied Mary"), use that name. If implied by context, use the name. If it's general narration or the speaker is truly unknown, use "Unknown" or "Narrator" as appropriate (in Farsi, e.g., "ناشناس" یا "راوی"). If the text indicates a source (e.g. "a wise man once said"), use that (in Farsi).
-3.  **`context`**: Briefly describe the situation in which the quote was made. What was happening, being discussed, or what led to the statement? This field MUST be in Farsi.
-4.  **`topic`**: Provide a concise keyword or short phrase for the main theme or subject of the quote (e.g., "صبر", "دانش", "صدقه"). This field MUST be in Farsi.
+1.  **`quote_text`**: This MUST be the verbatim text of the hadith, revayat, saying, or account. Do NOT translate the `quote_text`. It should represent a complete, self-contained narrative or teaching.
+2.  **`speaker`**: Identify who made the statement or is the primary narrator of the account. This field MUST be in Farsi. If explicitly mentioned (e.g., "John said...", "...replied Mary"), use that name. If implied by context, use the name. If it's general narration or the speaker is truly unknown, use "Unknown" or "Narrator" as appropriate (in Farsi, e.g., "ناشناس" یا "راوی"). If the text indicates a source (e.g. "a wise man once said"), use that (in Farsi).
+3.  **`context`**: Briefly describe the situation in which the hadith/revayat/account was made or is presented. What was happening, being discussed, or what led to the statement? This field MUST be in Farsi.
+4.  **`topic`**: Provide a concise keyword or short phrase for the main theme or subject of the hadith, revayat, or account (e.g., "صبر", "دانش", "صدقه"). This field MUST be in Farsi.
 5.  **`additional_info`**: This field MUST be a JSON string. It must include a 'surah' key with the Surah name in Farsi (e.g., "سوره فاتحه"). If the `quote_text` is in Arabic, the JSON string MUST also include a 'quote_translation' key with the Farsi translation of the `quote_text`. For example, if `quote_text` is "بسم الله الرحمن الرحيم", `additional_info` would be "{{{{\"surah\": \"سورة الفاتحة\", \"quote_translation\": \"به نام خداوند بخشنده مهربان\"}}}}". If `quote_text` is already in Farsi, `additional_info` would be "{{{{\"surah\": \"سوره بقره\"}}}}". All text values within the JSON string (like Surah name and translation) MUST be in Farsi.
 
 Output Requirements:
 - Your entire response MUST be a single JSON list.
-- If multiple distinct quotes are found, return all of them as objects within this list.
-- If no quotes, sayings, or hadith are found in the text chunk, you MUST return an empty list: `[]`.
+- If multiple distinct hadith, revayat, or accounts are found, return all of them as objects within this list.
+- If no hadith, revayat, or accounts are found in the text chunk, you MUST return an empty list: `[]`.
 - Do NOT include any explanatory text, greetings, or apologies before or after the JSON list. Your response should start with `[` and end with `]`.
 
-Consider the following when identifying quotes:
+Consider the following when identifying hadith, revayat, or accounts:
 - Direct speech indicated by quotation marks (e.g., "...", '...').
 - Reported speech (e.g., He said that..., She explained how...).
-- Significant statements or aphorisms presented as wisdom or teachings, even if not in direct quotes.
-- A "hadith" in this context is a saying, tradition, or account, often of a moral, religious, or wise nature.
-- **Conversational Quotes**: If multiple consecutive statements form a coherent conversation or dialogue, combine them into a single `quote_text` entry. For such combined quotes, the `speaker` should be the primary speaker, or a general term like 'گفتگوکنندگان' (Conversationalists) or 'چندین نفر' (Multiple people) in Farsi. The `context` should summarize the flow of the dialogue.
+- Significant statements or aphorisms presented as wisdom or teachings.
+- A "hadith" or "revayat" in this context is a complete saying, tradition, or account, often of a moral, religious, or wise nature. It is typically multi-sentence or multi-paragraph.
+
+**What NOT to extract as separate entries**:
+- Short, isolated sentences that are clearly part of a larger, ongoing hadith/revayat.
+- Common introductory phrases, verses, or concluding remarks (e.g., "و انزلنا الیک الذکر لتبیین للناس", "انا انزلنا") if they are merely components of a larger narrative and not self-contained teachings.
+- Fragments of a hadith/revayat that require preceding or succeeding text to be fully understood.
+
+- **Conversational Accounts**: If multiple consecutive statements form a coherent conversation or dialogue, combine them into a single `quote_text` entry. For such combined accounts, the `speaker` should be the primary speaker, or a general term like 'گفتگوکنندگان' (Conversationalists) or 'چندین نفر' (Multiple people) in Farsi. The `context` should summarize the flow of the dialogue.
+
+- **Hadith/Revayat Extraction**: When identifying a "hadith" or "revayat" (حدیث یا روایت), your primary goal is to extract the *entire* coherent narrative, teaching, or account as a single `quote_text`. Do not split a complete hadith or revayat into smaller, fragmented sentences or sub-accounts, even if it contains multiple distinct statements within it. The `quote_text` for a hadith should be the full, continuous text of that hadith.
+
+**Important Note on `quote_text` Length**: The `quote_text` field is designed to hold the complete identified unit, whether it's a single sentence, a conversation, or an entire hadith/revayat. Therefore, `quote_text` can be multi-sentence or multi-paragraph if that is what constitutes the complete, coherent unit you are extracting.
 
 Text chunk to analyze:
 -----------------------------------
 {{text_chunk}}
 -----------------------------------
 
-Example of a valid response with quotes:
+Example of a valid response with entries:
 ```json
 {ESCAPED_EXAMPLE_JSON_CONTENT}
 ```
 
-Example of a valid response with no quotes:
+Example of a valid response with no entries:
 ```json
 []
 ```

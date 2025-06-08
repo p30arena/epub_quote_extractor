@@ -25,7 +25,7 @@ except ImportError:
 
 
 DEFAULT_MAX_CHUNK_SIZE = 15000 # Characters. Adjusted based on typical LLM input sizes for single calls.
-DEFAULT_OVERLAP_SIZE = DEFAULT_MAX_CHUNK_SIZE * 0.1 # Characters. Default overlap for chunking.
+DEFAULT_OVERLAP_SIZE = int(DEFAULT_MAX_CHUNK_SIZE * 0.1) # Characters. Default overlap for chunking. Ensure it's an integer.
 DEFAULT_DB_BATCH_SIZE = 10
 
 def main():
@@ -42,6 +42,18 @@ def main():
         type=int,
         default=DEFAULT_OVERLAP_SIZE,
         help=f"Number of characters to overlap between consecutive text chunks (default: {DEFAULT_OVERLAP_SIZE}). This is passed to the chunk_text function."
+    )
+    parser.add_argument(
+        "--context-before-chars",
+        type=int,
+        default=DEFAULT_OVERLAP_SIZE, # Using overlap size as a reasonable default for context
+        help=f"Number of characters from the *previous* chunk to include as context (default: {DEFAULT_OVERLAP_SIZE})."
+    )
+    parser.add_argument(
+        "--context-after-chars",
+        type=int,
+        default=DEFAULT_OVERLAP_SIZE, # Using overlap size as a reasonable default for context
+        help=f"Number of characters from the *next* chunk to include as context (default: {DEFAULT_OVERLAP_SIZE})."
     )
     parser.add_argument(
         "--batch-size",
@@ -121,9 +133,26 @@ def main():
             chunk_source_preview = chunk_info['source'][:100].replace('\n', ' ')
             print(f"  Processing chunk {i + 1}/{len(text_chunks)} (Source: '{chunk_source_preview}...', Length: {len(chunk_info['text'])} chars)")
 
-            print(f"DEBUG_MAIN: Calling analyze_text_with_gemini for chunk: {chunk_info['source'][:50]}")
-            # Call LLM for the current chunk
-            llm_output_list = analyze_text_with_gemini(chunk_info['text'])
+            # Construct the full contextual text for the LLM
+            current_chunk_text = chunk_info['text']
+            context_before = ""
+            context_after = ""
+
+            # Get context from previous chunk if available
+            if i > 0:
+                prev_chunk_text = text_chunks[i-1]['text']
+                context_before = prev_chunk_text[-args.context_before_chars:] + "\n\n... (Previous Section Continued) ...\n\n"
+
+            # Get context from next chunk if available
+            if i < len(text_chunks) - 1:
+                next_chunk_text = text_chunks[i+1]['text']
+                context_after = "\n\n... (Next Section Continued) ...\n\n" + next_chunk_text[:args.context_after_chars]
+
+            full_context_text = f"{context_before}{current_chunk_text}{context_after}"
+
+            print(f"DEBUG_MAIN: Calling analyze_text_with_gemini for chunk: {chunk_info['source'][:50]} (Contextual length: {len(full_context_text)} chars)")
+            # Call LLM for the current chunk with surrounding context
+            llm_output_list = analyze_text_with_gemini(full_context_text)
             print(f"DEBUG_MAIN: Returned from analyze_text_with_gemini. Type: {type(llm_output_list)}, Content: {str(llm_output_list)[:500]}")
 
             if llm_output_list is not None: # analyze_text_with_gemini returns None on total failure, [] if no quotes
