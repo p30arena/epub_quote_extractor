@@ -8,6 +8,7 @@ The system will follow a modular architecture, separating concerns into distinct
 *   **LLM Handler Module:** Manages interaction with the Large Language Model (LLM), including prompt engineering, context window management, and structured output parsing.
 *   **Database Module:** Handles all database operations, including schema definition, data storage, and migration management.
 *   **Main Application Logic:** Orchestrates the flow, connecting the parser, LLM handler, and database modules.
+*   **Approval Handler Module:** A new module (`approval_handler.py`) responsible for the second-stage processing of quotes, including LLM-powered approval and grouping.
 
 ## Key Technical Decisions
 
@@ -19,7 +20,10 @@ The system will follow a modular architecture, separating concerns into distinct
 
 ## Design Patterns in Use
 
-*   **Modular Design:** The codebase is structured into distinct modules (`main`, `epub_parser`, `llm_handler`, `database`, `prompts`, `schemas`), encapsulating core functionalities.
+*   **Two-Stage Processing:** The system now employs a two-stage process:
+    1.  **Extraction:** The `main.py` script extracts quotes from the EPUB and saves them with a `PENDING` status.
+    2.  **Approval & Grouping:** The `approval_handler.py` script, triggered by the `--run-approval` flag, processes these pending quotes, using an LLM to approve, decline, and group them.
+*   **Modular Design:** The codebase is structured into distinct modules (`main`, `epub_parser`, `llm_handler`, `database`, `prompts`, `schemas`, `approval_prompts`, `approval_handler`), encapsulating core functionalities.
 *   **Dependency Injection:** Database sessions are managed via a generator (`get_db` in `database.py`), allowing sessions to be injected and properly closed.
 *   **Data Transfer Objects (DTOs):** Pydantic models (`QuoteLLM`) serve as DTOs for structured data transfer between the LLM and the main application logic, and for validation.
 *   **Configuration Management:** Environment variables (`.env`) are used for sensitive configurations like API keys and database credentials.
@@ -35,18 +39,29 @@ The system will follow a modular architecture, separating concerns into distinct
 *   **Main Application <--> EPUB Parser:** The main application will invoke the parser to get text chunks from an EPUB.
 *   **Main Application <--> LLM Handler:** The main application will pass text chunks to the LLM handler and receive structured quote data.
 *   **Main Application <--> Database Module:** The main application will pass structured quote data to the database module for storage.
+*   **Main Application <--> Approval Handler:** The main application, when run with `--run-approval`, will invoke the approval handler.
+*   **Approval Handler <--> LLM Handler:** The approval handler will use the LLM handler to get decisions on approval and grouping.
+*   **Approval Handler <--> Database Module:** The approval handler will read pending quotes from and write updated statuses and groups to the database.
 *   **LLM Handler <--> LLM API:** The LLM handler will communicate directly with the Google Gemini API.
 *   **Database Module <--> PostgreSQL:** The database module will interact with the PostgreSQL instance.
 
 ```mermaid
 graph TD
-    A[EPUB File] --> B[EPUB Parser Module]
-    B --> C{Text Chunks + Page Info}
-    C --> D[LLM Handler Module]
-    D --> E[Google Gemini 2.5 Flash API]
-    D --> F{Structured Quote Data}
-    F --> G[Database Module]
-    G --> H[PostgreSQL Database]
-    Main[Main Application Logic] --> B
-    Main --> D
-    Main --> G
+    subgraph "Stage 1: Extraction"
+        A[EPUB File] --> B[EPUB Parser Module]
+        B --> C{Text Chunks}
+        C --> D[LLM Handler (Extraction)]
+        D --> F{Structured Quote Data (Pending)}
+        F --> G[Database Module]
+        G --> H[(PostgreSQL Database)]
+        Main[Main Application Logic] --> B
+        Main --> D
+        Main --> G
+    end
+
+    subgraph "Stage 2: Approval & Grouping"
+        I[--run-approval] --> J[Approval Handler]
+        J --> K[LLM Handler (Approval & Grouping)]
+        K --> H
+        J --> H
+    end

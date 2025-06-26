@@ -2,10 +2,16 @@
 
 ## Current Work Focus
 
-The current focus is on initializing the project's memory bank with comprehensive documentation based on the initial project description. This foundational step ensures that all subsequent development is aligned with the project's goals and constraints.
+The current focus is on implementing a two-stage, LLM-powered pipeline for quote extraction and approval. This involves a first stage for raw extraction and a second stage for automated approval and grouping of the extracted quotes.
 
 ## Recent Changes
 
+*   **Two-Stage Architecture Implemented:** The application now supports a two-stage process. The first stage extracts quotes and saves them as `PENDING`. The second stage, triggered by `--run-approval`, uses an LLM to approve, decline, and group these quotes.
+*   **Database Schema Updated:** The `schemas.py` file has been updated to include `QuoteApprovalDB`, `QuoteGroupDB`, and `QuoteToGroupDB` tables to support the new workflow. The `QuoteDB` model now has relationships to these new tables.
+*   **Database Logic Updated:** The `database.py` module has been updated to automatically create a `PENDING` `QuoteApprovalDB` record for each new quote saved.
+*   **Approval Prompts Created:** A new `approval_prompts.py` file has been created to house the prompts for the second-stage LLM analysis.
+*   **Approval Handler Created:** A new `approval_handler.py` module has been created to orchestrate the entire approval and grouping process.
+*   **Main Script Updated:** The `main.py` script has been updated to include a `--run-approval` flag to trigger the new second-stage process.
 *   **Memory Bank Initialized & Updated:** All core memory bank files have been created and subsequently updated to reflect the current state of the codebase.
 *   **Unique Composite Index Implemented:** A unique composite index on `epub_source_identifier` and `quote_text` has been added to the `QuoteDB` model in `schemas.py` to prevent duplicate quote entries.
 *   **Database Conflict Handling:** The `save_quotes_to_db` function in `database.py` has been modified to use `ON CONFLICT DO NOTHING` for PostgreSQL inserts, leveraging the new `to_dict()` method on `QuoteDB` for proper data mapping.
@@ -21,8 +27,9 @@ The current focus is on initializing the project's memory bank with comprehensiv
 ## Next Steps
 
 1.  **Environment Setup:** Set up the Python virtual environment and install all necessary dependencies as specified in `requirements.txt`.
-2.  **Database Migration Setup:** Initialize Alembic for database migrations, ensuring it integrates with the existing SQLAlchemy models (`QuoteDB` and `ProgressDB`). This is crucial for applying the new unique constraint and the `progress` table to the database.
-3.  **EPUB Page Number Refinement (Phase 2 & 3):** Continue to investigate and implement more precise page number extraction from EPUBs, or enhance `epub_source_identifier` if possible, beyond just section IDs and current heuristic. This includes exploring structural metadata and LLM-assisted extraction if needed.
+2.  **Database Migration Setup:** Initialize Alembic for database migrations to apply the new schema changes (`QuoteApproval`, `QuoteGroup`, `QuoteToGroup` tables) to the database.
+3.  **LLM Prompt Optimization:** Further fine-tune the LLM prompts in both `prompts.py` and `approval_prompts.py` to improve extraction, approval, and grouping accuracy.
+4.  **EPUB Page Number Refinement (Phase 2 & 3):** Continue to investigate and implement more precise page number extraction from EPUBs, or enhance `epub_source_identifier` if possible, beyond just section IDs and current heuristic. This includes exploring structural metadata and LLM-assisted extraction if needed.
 4.  **LLM Prompt Optimization:** Further fine-tune the LLM prompts to improve extraction accuracy, especially for diverse EPUB content and complex quote structures.
 5.  **Comprehensive Error Handling:** Enhance error handling across all modules, particularly for edge cases in EPUB parsing (e.g., malformed EPUBs), LLM response failures, and database integrity issues.
 6.  **Testing:** Develop a comprehensive suite of unit, integration, and end-to-end tests to ensure reliability and correctness of the entire pipeline.

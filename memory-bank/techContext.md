@@ -10,6 +10,8 @@
 *   **EPUB Parsing:** `ebooklib` and `BeautifulSoup` (used in `epub_parser.py`)
 *   **Data Validation/Serialization:** Pydantic (used in `schemas.py` for `QuoteLLM` and `main.py` for validation)
 *   **Environment Variables:** `python-dotenv` (used in `database.py` and `llm_handler.py`)
+*   **Approval and Grouping Logic:** A new module, `approval_handler.py`, orchestrates the second-stage processing of quotes.
+*   **Approval and Grouping Prompts:** A new module, `approval_prompts.py`, contains the specific prompts for the LLM-powered approval and grouping.
 *   **Text Chunking:** Custom implementation in `epub_parser.py` with configurable overlap. The default overlap size is dynamically set to 10% of the maximum chunk size in `main.py`.
 
 ## Development Setup

@@ -1,9 +1,11 @@
 # schemas.py
 from pydantic import BaseModel, Field
 from typing import Optional
+import enum
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, Enum, ForeignKey, PrimaryKeyConstraint
+from sqlalchemy.orm import relationship
 
 # Pydantic model for LLM structured output
 class QuoteLLM(BaseModel):
@@ -59,12 +61,50 @@ class QuoteDB(Base):
     topic: Optional[str] = Column(String(255), nullable=True, index=True) # Made Optional[str] consistent with Column definition
     additional_info: Optional[str] = Column(Text, nullable=True) # Made Optional[str] consistent with Column definition
 
+    approval = relationship("QuoteApprovalDB", back_populates="quote", uselist=False, cascade="all, delete-orphan")
+    groups = relationship("QuoteToGroupDB", back_populates="quote", cascade="all, delete-orphan")
+
     def __repr__(self):
         return f"<QuoteDB(id={self.id}, speaker='{self.speaker}', topic='{self.topic}', source='{self.epub_source_identifier[:30]}...')>"
 
     def to_dict(self):
         """Converts the SQLAlchemy model instance to a dictionary."""
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+class QuoteStatusEnum(enum.Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    DECLINED = "DECLINED"
+
+class QuoteApprovalDB(Base):
+    __tablename__ = "QuoteApproval"
+
+    id: int = Column(Integer, primary_key=True, index=True)
+    quote_id: int = Column(Integer, ForeignKey('quotes.id'), nullable=False, unique=True)
+    status: str = Column(Enum(QuoteStatusEnum), default=QuoteStatusEnum.PENDING, nullable=False)
+    approved_by: Optional[str] = Column(String(255), nullable=True)
+    timestamp: str = Column(String, server_default='CURRENT_TIMESTAMP', nullable=False)
+
+    quote = relationship("QuoteDB", back_populates="approval")
+
+class QuoteGroupDB(Base):
+    __tablename__ = "QuoteGroup"
+
+    id: int = Column(Integer, primary_key=True, index=True)
+    name: Optional[str] = Column(String(255), nullable=True)
+    description: Optional[str] = Column(Text, nullable=True)
+
+    quotes = relationship("QuoteToGroupDB", back_populates="group", cascade="all, delete-orphan")
+
+class QuoteToGroupDB(Base):
+    __tablename__ = "QuoteToGroup"
+    __table_args__ = (PrimaryKeyConstraint('quote_id', 'group_id'),)
+
+    quote_id: int = Column(Integer, ForeignKey('quotes.id'), nullable=False)
+    group_id: int = Column(Integer, ForeignKey('QuoteGroup.id'), nullable=False)
+
+    quote = relationship("QuoteDB", back_populates="groups")
+    group = relationship("QuoteGroupDB", back_populates="quotes")
 
 if __name__ == '__main__':
     # Basic test for Pydantic model

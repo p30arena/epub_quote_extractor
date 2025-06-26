@@ -2,6 +2,15 @@
 
 ## What Works
 
+*   **Two-Stage Processing Pipeline:** The full, two-stage pipeline for quote extraction, approval, and grouping is now implemented.
+*   **Stage 1: Extraction:**
+    *   **Core Application Orchestration (`main.py`):** Handles argument parsing, EPUB processing, LLM interaction, and database saving. Now includes `overlap_size` argument and **integrates progress tracking for resume/pause functionality.**
+*   **Stage 2: Approval & Grouping:**
+    *   **Approval Handler (`approval_handler.py`):** Orchestrates the second-stage processing of quotes.
+    *   **Approval Prompts (`approval_prompts.py`):** Contains the prompts for LLM-powered approval and grouping.
+    *   **CLI Trigger (`main.py`):** The `--run-approval` flag in `main.py` successfully triggers the approval process.
+*   **Database Schema (`schemas.py`):** The schema has been updated with `QuoteApproval`, `QuoteGroup`, and `QuoteToGroup` tables, along with the necessary relationships.
+*   **Database Logic (`database.py`):** The `save_quotes_to_db` function now correctly creates a `PENDING` approval record for each new quote.
 *   **Memory Bank Initialized & Updated:** The foundational documentation has been created and updated to reflect the current codebase.
 *   **Core Application Orchestration (`main.py`):** Handles argument parsing, EPUB processing, LLM interaction, and database saving. Now includes `overlap_size` argument and **integrates progress tracking for resume/pause functionality.**
 *   **EPUB Parsing (`epub_parser.py`):** Extracts text by chapter/section using `ebooklib` and `BeautifulSoup`. Now includes chunking with configurable `overlap_size` (default 200 chars).
@@ -13,7 +22,8 @@
 ## What's Left to Build
 
 *   **Environment Setup:** The Python virtual environment needs to be activated and all dependencies from `requirements.txt` installed.
-*   **Database Migration Setup:** Alembic needs to be initialized and configured to manage schema changes for the `QuoteDB` and `ProgressDB` models. This is crucial for applying the new unique constraint and the `progress` table to the database.
+*   **Database Migration Setup:** Alembic needs to be initialized and configured to manage the new schema changes (`QuoteApproval`, `QuoteGroup`, `QuoteToGroup`).
+*   **LLM Prompt Optimization:** The prompts in both `prompts.py` and `approval_prompts.py` can be further refined to improve accuracy.
 *   **EPUB Page Number Refinement:** Continue to investigate and implement more precise page number extraction from EPUBs, or enhance the `epub_source_identifier` if possible, as the current implementation relies on section IDs.
 *   **LLM Prompt Optimization:** Further fine-tune the LLM prompts to improve extraction accuracy, especially for diverse EPUB content and complex quote structures.
 *   **Comprehensive Error Handling:** Enhance error handling across all modules, particularly for edge cases in EPUB parsing (e.g., malformed EPUBs), LLM response failures, and database integrity issues.
@@ -22,7 +32,7 @@
 
 ## Current Status
 
-The project has a robust foundational implementation for its core components, including EPUB parsing with overlap, LLM interaction with structured outputs, database persistence with duplicate prevention, and **now includes a mechanism for persisting and resuming processing progress.** The data models and prompt engineering are well-defined. The immediate next steps involve setting up the development environment, configuring database migrations, and then focusing on refining existing components and adding comprehensive testing.
+The project now features a complete, two-stage, LLM-powered pipeline for quote extraction and processing. The first stage extracts quotes from EPUBs and stores them in a database with a `PENDING` status. The second stage uses an LLM to automatically approve, decline, and group these quotes. The database schema, application logic, and command-line interface have all been updated to support this new architecture. The immediate next steps are to set up the environment, run database migrations to apply the new schema, and then begin testing and refining the new pipeline.
 
 ## Known Issues
 
