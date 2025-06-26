@@ -6,11 +6,11 @@ The current focus is on implementing a two-stage, LLM-powered pipeline for quote
 
 ## Recent Changes
 
-*   **Two-Stage Architecture Implemented:** The application now supports a two-stage process. The first stage extracts quotes and saves them as `PENDING`. The second stage, triggered by `--run-approval`, uses an LLM to approve, decline, and group these quotes.
+*   **Revised Two-Stage Workflow Implemented:** The approval and grouping process has been refined. The first stage extracts quotes and saves them as `PENDING`. The second stage, triggered by `--run-approval`, now prioritizes grouping. All pending quotes are first sent to the LLM for potential grouping. Quotes that form a group are marked `APPROVED`. Remaining ungrouped `PENDING` quotes are then individually evaluated by the LLM for final approval (if a valid hadith/saying) or declination (if an isolated Quranic ayah).
 *   **Database Schema Updated:** The `schemas.py` file has been updated to include `QuoteApprovalDB`, `QuoteGroupDB`, and `QuoteToGroupDB` tables to support the new workflow. The `QuoteDB` model now has relationships to these new tables.
 *   **Database Logic Updated:** The `database.py` module has been updated to automatically create a `PENDING` `QuoteApprovalDB` record for each new quote saved.
-*   **Approval Prompts Created:** A new `approval_prompts.py` file has been created to house the prompts for the second-stage LLM analysis.
-*   **Approval Handler Created:** A new `approval_handler.py` module has been created to orchestrate the entire approval and grouping process.
+*   **Approval Prompts Updated:** The `approval_prompts.py` file has been updated to reflect the new logic for the `APPROVE_QUOTE_PROMPT_TEMPLATE`, which now specifically targets ungrouped quotes.
+*   **Approval Handler Updated:** The `approval_handler.py` module has been updated to orchestrate the revised grouping-first workflow.
 *   **Main Script Updated:** The `main.py` script has been updated to include a `--run-approval` flag to trigger the new second-stage process.
 *   **Memory Bank Initialized & Updated:** All core memory bank files have been created and subsequently updated to reflect the current state of the codebase.
 *   **Unique Composite Index Implemented:** A unique composite index on `epub_source_identifier` and `quote_text` has been added to the `QuoteDB` model in `schemas.py` to prevent duplicate quote entries.

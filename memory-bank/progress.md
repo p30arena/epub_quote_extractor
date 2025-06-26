@@ -2,13 +2,17 @@
 
 ## What Works
 
-*   **Two-Stage Processing Pipeline:** The full, two-stage pipeline for quote extraction, approval, and grouping is now implemented.
+*   **Revised Two-Stage Processing Pipeline:** The full, two-stage pipeline for quote extraction, approval, and grouping has been implemented with a revised workflow.
 *   **Stage 1: Extraction:**
     *   **Core Application Orchestration (`main.py`):** Handles argument parsing, EPUB processing, LLM interaction, and database saving. Now includes `overlap_size` argument and **integrates progress tracking for resume/pause functionality.**
-*   **Stage 2: Approval & Grouping:**
-    *   **Approval Handler (`approval_handler.py`):** Orchestrates the second-stage processing of quotes.
-    *   **Approval Prompts (`approval_prompts.py`):** Contains the prompts for LLM-powered approval and grouping.
-    *   **CLI Trigger (`main.py`):** The `--run-approval` flag in `main.py` successfully triggers the approval process.
+*   **Stage 2: Approval & Grouping (Revised Workflow):**
+    *   **Approval Handler (`approval_handler.py`):** Orchestrates the second-stage processing. It now prioritizes grouping all `PENDING` quotes first.
+    *   **Approval Prompts (`approval_prompts.py`):** Contains the prompts for LLM-powered approval and grouping, with the approval prompt now specifically tailored for ungrouped quotes.
+    *   **CLI Trigger (`main.py`):** The `--run-approval` flag in `main.py` successfully triggers this revised approval process.
+*   **Database Schema (`schemas.py`):** The schema has been updated with `QuoteApproval`, `QuoteGroup`, and `QuoteToGroup` tables, along with the necessary relationships.
+*   **Database Logic (`database.py`):** The `save_quotes_to_db` function now correctly creates a `PENDING` approval record for each new quote.
+*   **Memory Bank Initialized & Updated:** The foundational documentation has been created and updated to reflect the current codebase.
+*   **Core Application Orchestration (`main.py`):** Handles argument parsing, EPUB processing, LLM interaction, and database saving. Now includes `overlap_size` argument and **integrates progress tracking for resume/pause functionality.**
 *   **Database Schema (`schemas.py`):** The schema has been updated with `QuoteApproval`, `QuoteGroup`, and `QuoteToGroup` tables, along with the necessary relationships.
 *   **Database Logic (`database.py`):** The `save_quotes_to_db` function now correctly creates a `PENDING` approval record for each new quote.
 *   **Memory Bank Initialized & Updated:** The foundational documentation has been created and updated to reflect the current codebase.
@@ -32,7 +36,7 @@
 
 ## Current Status
 
-The project now features a complete, two-stage, LLM-powered pipeline for quote extraction and processing. The first stage extracts quotes from EPUBs and stores them in a database with a `PENDING` status. The second stage uses an LLM to automatically approve, decline, and group these quotes. The database schema, application logic, and command-line interface have all been updated to support this new architecture. The immediate next steps are to set up the environment, run database migrations to apply the new schema, and then begin testing and refining the new pipeline.
+The project now features a complete, two-stage, LLM-powered pipeline for quote extraction and processing with a revised workflow. The first stage extracts quotes from EPUBs and stores them in a database with a `PENDING` status. The second stage first attempts to group all pending quotes, marking grouped quotes as `APPROVED`. Any remaining ungrouped quotes are then individually evaluated by an LLM for final approval or declination (specifically, isolated Quranic ayahs are declined). The database schema, application logic, and command-line interface have all been updated to support this new architecture. The immediate next steps are to set up the environment, run database migrations to apply the new schema, and then begin testing and refining the new pipeline.
 
 ## Known Issues
 

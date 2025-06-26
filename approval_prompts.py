@@ -4,13 +4,13 @@ from typing import List
 from schemas import QuoteDB
 import json
 
-# Prompt to approve or decline a single quote
-APPROVE_QUOTE_PROMPT_TEMPLATE = """You are an expert in Islamic studies and literature. Your task is to determine if a given text is a "hadith" or "revayat" (a saying or account of the Prophet Muhammad or other religious figures) and not just a direct quote from the Quran (an "ayah").
+# Prompt to approve or decline a single quote (used for ungrouped quotes)
+APPROVE_QUOTE_PROMPT_TEMPLATE = """You are an expert in Islamic studies and literature. Your task is to determine if a given text, which was *not* grouped with any other quotes, should be approved or declined.
 
 **Rule:**
-- If the text is **only** an ayah from the Quran, you must decline it.
-- If the text is a hadith or revayat that *contains* an ayah as part of its narrative, you should approve it.
-- If the text is a saying, hadith, or revayat, you must approve it.
+- If the text is a "hadith" or "revayat" (a saying or account of the Prophet Muhammad or other religious figures), or a general significant saying, you must `APPROVED` it.
+- If the text is **only** an ayah from the Quran and appears to be isolated (i.e., not part of a larger narrative or explanation within its context), you must `DECLINED` it.
+- If the text is a hadith or revayat that *contains* an ayah as part of its narrative, you should `APPROVED` it.
 
 **Input:**
 - A JSON object representing a quote with the following keys: `quote_text`, `speaker`, `context`, `topic`.
