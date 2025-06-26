@@ -14,6 +14,22 @@ def approve_and_group_quotes(db: Session):
     """
     print("Starting approval and grouping process...")
 
+    # Step 0: Ensure all quotes in 'quotes' table have a corresponding 'QuoteApproval' entry
+    print("Checking for quotes missing approval records and creating PENDING entries...")
+    quotes_without_approval = db.query(QuoteDB).outerjoin(QuoteApprovalDB).filter(QuoteApprovalDB.id == None).all()
+    if quotes_without_approval:
+        print(f"Found {len(quotes_without_approval)} quotes missing approval records. Creating PENDING entries.")
+        for quote in quotes_without_approval:
+            approval_record = QuoteApprovalDB(
+                quote_id=quote.id,
+                status=QuoteStatusEnum.PENDING
+            )
+            db.add(approval_record)
+        db.commit()
+        print("Created PENDING approval records for missing quotes.")
+    else:
+        print("All quotes have approval records. No new PENDING entries created.")
+
     # Fetch all currently pending quotes for potential grouping
     # Order by ID to maintain some form of document order for the LLM
     all_pending_quotes = db.query(QuoteDB).join(QuoteApprovalDB).filter(QuoteApprovalDB.status == QuoteStatusEnum.PENDING).order_by(QuoteDB.id).all()
@@ -27,7 +43,7 @@ def approve_and_group_quotes(db: Session):
     print("Starting grouping phase for all pending quotes...")
     try:
         prompt = get_formatted_group_quotes_prompt(all_pending_quotes)
-        response = get_llm_response(prompt)
+        response = get_llm_response(prompt, response_mime_type="application/json") # Expect JSON for grouping
         grouped_ids_lists = json.loads(response)
 
         if not isinstance(grouped_ids_lists, list):
@@ -95,7 +111,8 @@ def approve_and_group_quotes(db: Session):
 
         except Exception as e:
             print(f"Error processing ungrouped quote {quote.id} for individual approval: {e}")
+            db.rollback() # Rollback changes for this quote if an error occurs
 
-    db.commit()
+    db.commit() # Commit all individual approvals after the loop
     print("Finished individual approval/decline phase for ungrouped quotes.")
     print("Approval and grouping process complete.")
