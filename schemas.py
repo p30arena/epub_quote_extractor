@@ -80,9 +80,9 @@ class QuoteApprovalDB(Base):
     __tablename__ = "QuoteApproval"
 
     id: int = Column(Integer, primary_key=True, index=True)
-    quote_id: int = Column("quoteId", Integer, ForeignKey('quotes.id'), nullable=False, unique=True) # Explicitly map to 'quoteId'
-    status: str = Column(Enum(QuoteStatusEnum), default=QuoteStatusEnum.PENDING, nullable=False)
-    approved_by: Optional[str] = Column("approvedBy", String(255), nullable=True) # Explicitly map to 'approvedBy'
+    quote_id: int = Column("quoteId", Integer, ForeignKey('quotes.id'), nullable=False, unique=True)
+    status: str = Column(Enum(QuoteStatusEnum, name='QuoteStatus'), default=QuoteStatusEnum.PENDING, nullable=False)
+    approved_by: Optional[str] = Column(String(255), nullable=True)
     timestamp: str = Column(String, server_default='CURRENT_TIMESTAMP', nullable=False)
 
     quote = relationship("QuoteDB", back_populates="approval")
