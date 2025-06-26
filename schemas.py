@@ -80,9 +80,9 @@ class QuoteApprovalDB(Base):
     __tablename__ = "QuoteApproval"
 
     id: int = Column(Integer, primary_key=True, index=True)
-    quote_id: int = Column(Integer, ForeignKey('quotes.id'), nullable=False, unique=True)
+    quote_id: int = Column("quoteId", Integer, ForeignKey('quotes.id'), nullable=False, unique=True) # Explicitly map to 'quoteId'
     status: str = Column(Enum(QuoteStatusEnum), default=QuoteStatusEnum.PENDING, nullable=False)
-    approved_by: Optional[str] = Column(String(255), nullable=True)
+    approved_by: Optional[str] = Column("approvedBy", String(255), nullable=True) # Explicitly map to 'approvedBy'
     timestamp: str = Column(String, server_default='CURRENT_TIMESTAMP', nullable=False)
 
     quote = relationship("QuoteDB", back_populates="approval")
@@ -98,10 +98,10 @@ class QuoteGroupDB(Base):
 
 class QuoteToGroupDB(Base):
     __tablename__ = "QuoteToGroup"
-    __table_args__ = (PrimaryKeyConstraint('quote_id', 'group_id'),)
+    __table_args__ = (PrimaryKeyConstraint('quoteId', 'groupId'),) # Use actual column names for PK
 
-    quote_id: int = Column(Integer, ForeignKey('quotes.id'), nullable=False)
-    group_id: int = Column(Integer, ForeignKey('QuoteGroup.id'), nullable=False)
+    quote_id: int = Column("quoteId", Integer, ForeignKey('quotes.id'), nullable=False) # Explicitly map to 'quoteId'
+    group_id: int = Column("groupId", Integer, ForeignKey('QuoteGroup.id'), nullable=False) # Explicitly map to 'groupId'
 
     quote = relationship("QuoteDB", back_populates="groups")
     group = relationship("QuoteGroupDB", back_populates="quotes")

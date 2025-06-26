@@ -5,7 +5,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from schemas import QuoteDB, QuoteApprovalDB, QuoteGroupDB, QuoteToGroupDB, QuoteStatusEnum
 from approval_prompts import get_formatted_approve_quote_prompt, get_formatted_group_quotes_prompt
-from llm_handler import get_llm_response  # Assuming a generic LLM call function
+from llm_handler import get_llm_response
 
 def approve_and_group_quotes(db: Session):
     """

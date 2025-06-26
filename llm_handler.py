@@ -211,6 +211,107 @@ def analyze_text_with_gemini(
     print(f"Error: All {retries} retries failed for LLM call. Last error ({type(last_error).__name__}): {last_error}")
     return None
 
+def get_llm_response(
+    prompt: str,
+    model_name: str = DEFAULT_MODEL_NAME,
+    retries: int = 3,
+    delay: int = 5, # seconds
+    response_mime_type: str = "text/plain" # Can be "application/json" for structured output
+) -> Optional[str]:
+    """
+    Sends a prompt to the Gemini LLM and returns the raw text response.
+    This is a generic function for prompts that expect a simple text or JSON string response.
+
+    Args:
+        prompt: The prompt string to send to the LLM.
+        model_name: The name of the Gemini model to use.
+        retries: Number of times to retry the API call on failure.
+        delay: Delay between retries in seconds.
+        response_mime_type: The expected MIME type of the response (e.g., "text/plain", "application/json").
+
+    Returns:
+        The raw text response from the LLM, or None if all retries fail.
+    """
+    ALLOWED_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20"]
+    if model_name not in ALLOWED_MODELS:
+        print(f"Error: Invalid model_name '{model_name}'. Only the following models are allowed: {ALLOWED_MODELS}")
+        return None
+
+    if not SDK_CONFIGURED_SUCCESSFULLY:
+        print("Error: Gemini API key not configured or SDK initialization failed. Cannot get LLM response.")
+        return None
+
+    generation_config = genai.types.GenerationConfig(
+        response_mime_type=response_mime_type,
+        temperature=0.1 # Low temperature for more deterministic output
+    )
+
+    model = genai.GenerativeModel(
+        model_name,
+        generation_config=generation_config,
+        safety_settings=SAFETY_SETTINGS
+    )
+
+    current_retry = 0
+    last_error = None
+
+    while current_retry < retries:
+        response_text_for_error = "N/A (LLM call not made or no text in response)"
+        try:
+            print(f"Generic LLM call attempt {current_retry + 1}/{retries} for model {model_name}...")
+            request_options = genai.types.RequestOptions(timeout=180) # 3 minutes timeout
+
+            response = model.generate_content(prompt, request_options=request_options)
+
+            if not response.parts:
+                if response.prompt_feedback and response.prompt_feedback.block_reason:
+                    block_reason = response.prompt_feedback.block_reason
+                    block_message = f"LLM call blocked due to: {block_reason}."
+                    if response.prompt_feedback.safety_ratings:
+                         block_message += f" Safety Ratings: {response.prompt_feedback.safety_ratings}"
+                    print(f"Warning: {block_message}")
+                    return None # If blocked, no valid response can be obtained
+                else:
+                    print("Warning: LLM response contained no parts for an unknown reason.")
+                    return None
+
+            try:
+                response_text_for_error = response.text.strip()
+            except Exception as text_access_e:
+                print(f"Error accessing or stripping response.text (Attempt {current_retry + 1}/{retries}): {text_access_e!r}")
+                last_error = text_access_e
+                current_retry += 1
+                if current_retry < retries:
+                    time.sleep(delay)
+                continue
+
+            if not response_text_for_error:
+                 print("Warning: Received empty text string from LLM.")
+                 return None
+
+            print(f"Successfully received response from LLM.")
+            return response_text_for_error
+
+        except genai.types.BlockedPromptException as e:
+            print(f"LLM call blocked by API (Attempt {current_retry + 1}/{retries}): {e}")
+            last_error = e
+            return None # If blocked, no valid response can be obtained
+        except Exception as e:
+            error_type = type(e).__name__
+            try:
+                print(f"Error during generic LLM call (Attempt {current_retry + 1}/{retries}) of type {error_type}. Error: {e!r}")
+            except Exception as log_e:
+                print(f"Critical: Failed to log original error. Original error type: {error_type}. Logging error: {log_e!r}")
+            last_error = e
+
+        current_retry += 1
+        if current_retry < retries:
+            print(f"Retrying in {delay} seconds...")
+            time.sleep(delay)
+
+    print(f"Error: All {retries} retries failed for generic LLM call. Last error ({type(last_error).__name__}): {last_error}")
+    return None
+
 
 if __name__ == '__main__':
     print("--- LLM Handler Standalone Test ---")
@@ -271,5 +372,3 @@ if __name__ == '__main__':
 
         print("\nLLM Handler Test Complete. Review results above.")
         print("Note: Actual LLM calls depend on a valid GEMINI_API_KEY and network access.")
-
-

@@ -10,17 +10,19 @@ from schemas import Base, QuoteDB, ProgressDB, QuoteApprovalDB, QuoteStatusEnum
 from sqlalchemy.dialects import postgresql # For on_conflict_do_nothing and on_conflict_do_update
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(override=True) # Ensure .env variables override existing ones
 
 DB_USER = os.getenv("DB_USER", "your_db_user")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "your_db_password")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "quotes_db")
+DB_NAME = os.getenv("DB_NAME") # Remove default to ensure it's read from .env or is None
 
-# Construct DATABASE_URL. Fallback to SQLite if PostgreSQL details are default.
+print(f"DEBUG: DB_USER={DB_USER}, DB_PASSWORD={'*' * len(DB_PASSWORD) if DB_PASSWORD else 'None'}, DB_HOST={DB_HOST}, DB_PORT={DB_PORT}, DB_NAME={DB_NAME}")
+
+# Construct DATABASE_URL. Fallback to SQLite if PostgreSQL details are default or DB_NAME is not set.
 # This provides a more robust default if a PostgreSQL server isn't readily available.
-if DB_USER == "your_db_user" or DB_PASSWORD == "your_db_password" or DB_NAME == "quotes_db" or not os.getenv("DB_USER"): # Check if DB_USER is not set
+if DB_USER == "your_db_user" or DB_PASSWORD == "your_db_password" or not DB_NAME or not os.getenv("DB_USER"): # Check if DB_USER is not set or DB_NAME is None/empty
     print(f"WARNING: Default PostgreSQL credentials/name detected or DB_USER not set for '{DB_NAME}'. ")
     print("This script will attempt to fall back to a local SQLite database 'quotes_fallback.db'.")
     print("To use PostgreSQL, ensure DB_USER, DB_PASSWORD, and DB_NAME are set in your environment or .env file.")
