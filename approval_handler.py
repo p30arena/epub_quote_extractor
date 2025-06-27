@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from schemas import QuoteDB, QuoteApprovalDB, QuoteGroupDB, QuoteToGroupDB, QuoteStatusEnum
 from approval_prompts import get_formatted_approve_quote_prompt, get_formatted_group_quotes_prompt
 from llm_handler import get_llm_response
+import re
 
 # Define a batch size for grouping quotes to avoid exceeding LLM context window
 # This value might need tuning based on average quote length and LLM capabilities.
@@ -13,6 +14,13 @@ from llm_handler import get_llm_response
 GROUPING_BATCH_SIZE = 20
 # Define overlap for grouping batches to catch groups spanning across batch boundaries
 GROUPING_OVERLAP_COUNT = 10 # Number of quotes to overlap between consecutive grouping batches
+
+def _extract_estimated_page(epub_source_identifier: str) -> int | None:
+    """Extracts the estimated page number from the epub_source_identifier string."""
+    match = re.search(r"\(Est\. Page: (\d+)\)", epub_source_identifier)
+    if match:
+        return int(match.group(1))
+    return None
 
 def approve_and_group_quotes(db: Session):
     """
@@ -61,17 +69,48 @@ def approve_and_group_quotes(db: Session):
     num_batches = (len(all_pending_quotes) - GROUPING_OVERLAP_COUNT + step_size) // step_size if len(all_pending_quotes) > GROUPING_OVERLAP_COUNT else 1
     if len(all_pending_quotes) == 0: num_batches = 0 # Handle empty list case
 
-    for i in range(0, len(all_pending_quotes), step_size):
-        # Ensure the batch does not go out of bounds
-        batch_end_index = min(i + GROUPING_BATCH_SIZE, len(all_pending_quotes))
-        batch_quotes = all_pending_quotes[i:batch_end_index]
+    current_index = 0
+    batch_num = 0
+    while current_index < len(all_pending_quotes):
+        batch_num += 1
+        batch_end_index = min(current_index + GROUPING_BATCH_SIZE, len(all_pending_quotes))
+        batch_quotes = all_pending_quotes[current_index:batch_end_index]
+
+        # Check for consecutive IDs within the batch
+        is_consecutive = True
+        for j in range(len(batch_quotes) - 1):
+            if batch_quotes[j+1].id != batch_quotes[j].id + 1:
+                print(f"Gap detected in quote IDs for batch starting at index {current_index}. Skipping to after gap.")
+                # Find the index of the quote after the gap and restart from there
+                gap_found_at_id = batch_quotes[j].id
+                next_expected_id = gap_found_at_id + 1
+                
+                # Find the actual index of the next_expected_id in all_pending_quotes
+                # This is inefficient for very large lists, but given typical batch sizes, it should be acceptable.
+                # A more optimized approach might involve pre-calculating gaps or using a dictionary for quick lookups.
+                found_next_index = -1
+                for k in range(current_index + j + 1, len(all_pending_quotes)):
+                    if all_pending_quotes[k].id == next_expected_id:
+                        found_next_index = k
+                        break
+                
+                if found_next_index != -1:
+                    current_index = found_next_index # Move current_index to the start of the next consecutive block
+                else:
+                    current_index = batch_end_index # If next_expected_id not found, move past this batch
+                
+                is_consecutive = False
+                break
+        
+        if not is_consecutive:
+            continue # Skip to the next iteration of the while loop
 
         # Skip if batch is too small to be meaningful for grouping (e.g., only overlap quotes)
         if len(batch_quotes) < 2: # A group needs at least 2 quotes
+            current_index += step_size # Move to the next batch
             continue
 
-        batch_num = int(i / step_size) + 1
-        print(f"Processing grouping batch {batch_num}/{num_batches} with {len(batch_quotes)} quotes (indices {i} to {batch_end_index-1}).")
+        print(f"Processing grouping batch {batch_num} with {len(batch_quotes)} quotes (IDs {batch_quotes[0].id} to {batch_quotes[-1].id}).")
 
         try:
             prompt = get_formatted_group_quotes_prompt(batch_quotes)
@@ -79,6 +118,7 @@ def approve_and_group_quotes(db: Session):
             
             if response is None:
                 print(f"Warning: LLM returned no response for grouping batch {batch_num}. Skipping this batch.")
+                current_index += step_size # Move to the next batch
                 continue
 
             grouped_ids_lists_batch = json.loads(response)
@@ -97,6 +137,27 @@ def approve_and_group_quotes(db: Session):
                 
                 if len(group_list_filtered) < 2: # After filtering, still need at least 2 quotes to form a group
                     continue
+
+                # Fetch the actual QuoteDB objects for page number check
+                quotes_in_group = db.query(QuoteDB).filter(QuoteDB.id.in_(group_list_filtered)).order_by(QuoteDB.id).all()
+                
+                # Ensure quotes_in_group matches group_list_filtered in content and order for page check
+                if len(quotes_in_group) != len(group_list_filtered) or \
+                   any(q.id != group_list_filtered[i] for i, q in enumerate(quotes_in_group)):
+                    print(f"Warning: Mismatch between LLM-returned group IDs and fetched quotes for batch {batch_num}. Skipping group.")
+                    continue
+
+                # Check page distance constraint
+                first_quote_page = _extract_estimated_page(quotes_in_group[0].epub_source_identifier)
+                last_quote_page = _extract_estimated_page(quotes_in_group[-1].epub_source_identifier)
+
+                if first_quote_page is not None and last_quote_page is not None:
+                    if abs(last_quote_page - first_quote_page) > 2:
+                        print(f"Skipping group {group_list_filtered} due to page distance > 2. First page: {first_quote_page}, Last page: {last_quote_page}")
+                        continue
+                elif first_quote_page is None or last_quote_page is None:
+                    print(f"Warning: Could not extract page number for all quotes in group {group_list_filtered}. Proceeding without page distance check for this group.")
+
 
                 # Create a new group
                 new_group = QuoteGroupDB(name="LLM-Generated Group", description="Group created by LLM analysis.")
