@@ -11,6 +11,7 @@ APPROVE_QUOTE_PROMPT_TEMPLATE = """You are an expert in Islamic studies and lite
 - If the text is a "hadith" or "revayat" (a saying or account of the Prophet Muhammad or other religious figures), or a general significant saying, you must `APPROVED` it.
 - If the text is **only** an ayah from the Quran and appears to be isolated (i.e., not part of a larger narrative or explanation within its context), you must `DECLINED` it.
 - If the text is a hadith or revayat that *contains* an ayah as part of its narrative, you should `APPROVED` it.
+- If the `speaker` field indicates a narrator (e.g., "Narrator", "راوی", "نویسنده", "Author", "کاتب", "Writer", "مترجم", "Translator", "مؤلف", "Compiler", "گردآورنده", "Editor", "ناشر", "Publisher", "ویراستار", "Commentator", "شارح", "مصحح", "Corrector", "محقق", "Researcher", "مقدمه نویس", "Introducer", "پاورقی", "توضیح", "حاشیه", "متن", "کتاب", "فصل", "بخش", "مقدمه", "Introduction", "Footnote", "Explanation", "Marginalia", "Text", "Book", "Chapter", "Section"), you must `DECLINED` it. The LLM should be able to recognize these and similar terms in both English and Farsi, and other languages if contextually appropriate.
 
 **Input:**
 - A JSON object representing a quote with the following keys: `quote_text`, `speaker`, `context`, `topic`.
@@ -18,17 +19,25 @@ APPROVE_QUOTE_PROMPT_TEMPLATE = """You are an expert in Islamic studies and lite
 **Output:**
 - A single word: `APPROVED` or `DECLINED`.
 
-**Example 1 (Decline):**
+**Example 1 (Decline - Quranic Ayah):**
 - Input: `{{"quote_text": "بسم الله الرحمن الرحيم", "speaker": "...", "context": "...", "topic": "..."}}`
 - Output: `DECLINED`
 
-**Example 2 (Approve):**
+**Example 2 (Approve - Hadith):**
 - Input: `{{"quote_text": "The Prophet said, 'The best of you are those who best treat their families.'", "speaker": "The Prophet", "context": "...", "topic": "..."}}`
 - Output: `APPROVED`
 
-**Example 3 (Approve):**
+**Example 3 (Approve - Hadith with Ayah):**
 - Input: `{{"quote_text": "Imam Ali said, 'As for the verse, "And hold firmly to the rope of Allah all together," it means...' and then he explained the verse.", "speaker": "Imam Ali", "context": "...", "topic": "..."}}`
 - Output: `APPROVED`
+
+**Example 4 (Decline - Narrator in English):**
+- Input: `{{"quote_text": "In this chapter, the author discusses the importance of knowledge.", "speaker": "Author", "context": "Introduction to the book", "topic": "Knowledge"}}`
+- Output: `DECLINED`
+
+**Example 5 (Decline - Narrator in Farsi):**
+- Input: `{{"quote_text": "در این بخش، راوی به توضیح وقایع می‌پردازد.", "speaker": "راوی", "context": "ادامه داستان", "topic": "تاریخ"}}`
+- Output: `DECLINED`
 
 Now, analyze the following quote and provide your decision:
 
